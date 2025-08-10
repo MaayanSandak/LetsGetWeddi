@@ -44,21 +44,21 @@ class LoginActivity : AppCompatActivity() {
                         val roleInDb = snap.getValue(String::class.java)
                         val roleFinal = roleInDb ?: selectedRole
                         if (roleInDb == null) {
-                            ref.child("role").setValue(roleFinal).addOnCompleteListener {
-                                RoleManager.load(object : RoleManager.Callback {
-                                    override fun onRoleLoaded(role: String, supplierId: String?) {
+                            ref.child("role").get().addOnSuccessListener { s ->
+                                val roleInDb = s.getValue(String::class.java)
+                                val roleFinal = roleInDb ?: selectedRole
+                                if (roleInDb == null) {
+                                    ref.child("role").setValue(roleFinal).addOnCompleteListener {
+                                        RoleManager.load(this@LoginActivity) { role, supplierId ->
+                                            goHome()
+                                        }
+                                    }
+                                } else {
+                                    RoleManager.load(this@LoginActivity) { role, supplierId ->
                                         goHome()
                                     }
-                                    override fun onNoUser() { goHome() }
-                                })
-                            }
-                        } else {
-                            RoleManager.load(object : RoleManager.Callback {
-                                override fun onRoleLoaded(role: String, supplierId: String?) {
-                                    goHome()
                                 }
-                                override fun onNoUser() { goHome() }
-                            })
+                            }
                         }
                     }.addOnFailureListener {
                         setLoading(false)

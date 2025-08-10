@@ -1,6 +1,6 @@
 <resources>
     <!-- app -->
-    <string name="app_name">letsGetWeddi</string>
+    <string name="app_name">Let\'sGetWeddi</string>
 
     <!-- Login/Register -->
     <string name="login_title">Welcome back!</string>
@@ -121,6 +121,11 @@
     <string name="category_hair_makeup">Hair &amp; Makeup</string>
     <string name="letsgetweddi">Let\'sGetWeddi</string>
     <string name="add_global_tip">Add Global Tip</string>
+    <string name="type_a_message">Type a message</string>
+    <string name="send">Send</string>
+
+    <string name="menu_messages">Messages</string>
+
 
 
 </resources>

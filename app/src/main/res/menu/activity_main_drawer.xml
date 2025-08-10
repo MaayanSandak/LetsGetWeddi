@@ -8,6 +8,10 @@
             android:icon="@drawable/home_page"
             android:title="@string/home_page" />
 
+        <item
+            android:id="@+id/nav_profile"
+            android:icon="@drawable/profile"
+            android:title="@string/profile" />
 
         <item
             android:id="@+id/nav_suppliers_root"
@@ -38,14 +42,9 @@
                     android:id="@+id/nav_hair_and_makeup"
                     android:icon="@drawable/hair"
                     android:title="@string/category_hair_and_makeup" />
+
             </menu>
         </item>
-
-
-        <item
-            android:id="@+id/nav_profile"
-            android:icon="@drawable/profile"
-            android:title="@string/profile" />
 
         <item
             android:id="@+id/nav_favorites"
@@ -68,6 +67,10 @@
             android:icon="@drawable/ic_menu_camera"
             android:title="@string/supplier_availability" />
 
+        <item
+            android:id="@+id/nav_messages"
+            android:icon="@drawable/ic_chat"
+            android:title="@string/menu_messages" />
 
         <item
             android:id="@+id/nav_logout"

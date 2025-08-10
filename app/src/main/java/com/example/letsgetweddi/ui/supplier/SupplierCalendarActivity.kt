@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.letsgetweddi.R
-import com.example.letsgetweddi.utils.RoleManager
+import com.example.letsgetweddi.utils.UiPermissions
 
 class SupplierCalendarActivity : AppCompatActivity() {
 
@@ -14,19 +14,22 @@ class SupplierCalendarActivity : AppCompatActivity() {
         setContentView(R.layout.activity_supplier_calendar)
 
         val supplierId = extractSupplierIdFromDeepLink(intent?.data)
-        RoleManager.isSupplier(this) { isSupplier, cachedSid ->
-            val owner = isSupplier && supplierId != null && supplierId == (cachedSid ?: supplierId)
-            if (!owner) {
+        if (supplierId.isNullOrBlank()) {
+            finish()
+            return
+        }
+
+        UiPermissions.checkOwner(this, supplierId) { isOwner ->
+            if (!isOwner) {
                 Toast.makeText(this, "View-only", Toast.LENGTH_SHORT).show()
                 finish()
-                return@isSupplier
             }
         }
     }
 
     private fun extractSupplierIdFromDeepLink(data: Uri?): String? {
-        val p = data?.path ?: return null
-        val parts = p.trim('/').split('/')
-        return parts.lastOrNull()
+        if (data == null) return null
+        val segments = data.pathSegments ?: return null
+        return segments.lastOrNull()
     }
 }

@@ -7,15 +7,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
-import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.appcompat.widget.SearchView
 import com.example.letsgetweddi.adapters.ChecklistAdapter
 import com.example.letsgetweddi.adapters.TipAdapter
 import com.example.letsgetweddi.databinding.FragmentTipsAndChecklistBinding
 import com.example.letsgetweddi.model.ChecklistItem
 import com.example.letsgetweddi.model.Tip
-import com.example.letsgetweddi.utils.RoleManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 
@@ -33,7 +32,7 @@ class TipsAndChecklistFragment : Fragment() {
     private val allTips = mutableListOf<Tip>()
     private val filteredTips = mutableListOf<Tip>()
 
-    private var isSupplier: Boolean = false
+    private var userRole: String = "client"
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentTipsAndChecklistBinding.inflate(inflater, container, false)
@@ -46,10 +45,14 @@ class TipsAndChecklistFragment : Fragment() {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
         database = FirebaseDatabase.getInstance().reference
 
-        RoleManager.isSupplier(requireContext()) { supplier, _ ->
-            isSupplier = supplier
-            binding.buttonAddTip.visibility = if (supplier) View.VISIBLE else View.GONE
-        }
+        database.child("Users").child(userId).child("role")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    userRole = snapshot.getValue(String::class.java) ?: "client"
+                    applyGating()
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            })
 
         binding.recyclerChecklist.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerTips.layoutManager = LinearLayoutManager(requireContext())
@@ -78,7 +81,8 @@ class TipsAndChecklistFragment : Fragment() {
         }
 
         binding.buttonAddTip.setOnClickListener {
-            if (!isSupplier) return@setOnClickListener
+            if (userRole != "supplier") return@setOnClickListener
+
             val container = LinearLayout(requireContext()).apply {
                 orientation = LinearLayout.VERTICAL
                 setPadding(32, 16, 32, 16)
@@ -119,6 +123,10 @@ class TipsAndChecklistFragment : Fragment() {
                 filterTips(newText.orEmpty()); return true
             }
         })
+    }
+
+    private fun applyGating() {
+        binding.buttonAddTip.visibility = if (userRole == "supplier") View.VISIBLE else View.GONE
     }
 
     private fun loadChecklist(userId: String) {

@@ -180,8 +180,8 @@ class ProviderDetailsActivity : AppCompatActivity() {
     private fun openChat() {
         val s = currentSupplier ?: return
         val i = Intent(this, com.example.letsgetweddi.ui.chat.ChatActivity::class.java)
-        i.putExtra("supplierId", s.id ?: supplierId)
-        i.putExtra("supplierName", s.name ?: "")
+        i.putExtra("otherUserId", s.id ?: supplierId)
+        i.putExtra("otherUserName", s.name ?: "")
         startActivity(i)
     }
 }

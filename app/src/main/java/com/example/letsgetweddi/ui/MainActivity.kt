@@ -61,15 +61,21 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             ID_MENU_FAVORITES -> openIfExists("com.example.letsgetweddi.ui.favorites.FavoritesFragment", "favorites")
             ID_MENU_TIPS -> openIfExists("com.example.letsgetweddi.ui.categories.TipsAndChecklistFragment", "tips_checklist")
             ID_MENU_CHECKLIST -> openIfExists("com.example.letsgetweddi.ui.categories.TipsAndChecklistFragment", "tips_checklist")
-            ID_MENU_CHAT -> startIfExists("com.example.letsgetweddi.ui.chat.ChatActivity")
+            ID_MENU_CHAT -> startIfExists("com.example.letsgetweddi.ui.chat.ConversationsActivity")
             ID_MENU_MY_PROFILE -> openIfExists("com.example.letsgetweddi.ui.supplier.ProfileFragment", "supplier_profile")
             ID_MENU_GALLERY -> startDeep("com.example.letsgetweddi.ui.gallery.GalleryManageActivity", "letsgetweddi://gallery/manage/${supplierId ?: ""}")
             ID_MENU_AVAILABILITY -> startDeep("com.example.letsgetweddi.ui.supplier.SupplierCalendarActivity", "letsgetweddi://availability/${supplierId ?: ""}")
-            ID_MENU_SUPPLIER_CHAT -> startIfExists("com.example.letsgetweddi.ui.chat.ChatActivity")
-            ID_MENU_LOGOUT -> { FirebaseAuth.getInstance().signOut(); startActivity(Intent(this, LoginActivity::class.java)); finish() }
+            ID_MENU_SUPPLIER_CHAT -> startIfExists("com.example.letsgetweddi.ui.chat.ConversationsActivity")
+            ID_MENU_LOGOUT -> {
+                FirebaseAuth.getInstance().signOut()
+                startActivity(Intent(this, LoginActivity::class.java))
+                finish()
+            }
         }
-        binding.drawerLayout.closeDrawer(binding.navView); return true
+        binding.drawerLayout.closeDrawer(binding.navView)
+        return true
     }
+
 
     private fun buildMenuForRole(r: String) {
         val menu = binding.navView.menu; menu.clear()
