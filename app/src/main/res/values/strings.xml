@@ -7,11 +7,11 @@
     <string name="register_title">Create an account</string>
     <string name="email_hint">Email</string>
     <string name="password_hint">Password</string>
-    <string name="login_button">Login</string>
-    <string name="register_button">Register</string>
-    <string name="dont_have_account">Do not have an account?</string>
+    <string name="login_button">log in</string>
+    <string name="register_button">sign up</string>
+    <string name="dont_have_account">Don\'t have an account?</string>
     <string name="already_have_account">Already have an account?</string>
-    <string name="logout">Logout</string>
+    <string name="logout">Log out</string>
 
     <!-- Home/Menu -->
     <string name="home_title">Home</string>
@@ -28,7 +28,7 @@
     <string name="error_fill_fields">Please fill in all fields.</string>
     <string name="success_account_created">Account created successfully!</string>
     <string name="goodbye_message">You have logged out.</string>
-    <string name="register">Register</string>
+    <string name="register">sign up</string>
     <string name="groom">Groom</string>
     <string name="bride">Bride</string>
     <string name="password">Password</string>
@@ -45,12 +45,9 @@
     <string name="home_page">home page</string>
     <string name="favorites">favorites</string>
     <string name="favorites_screen">Favorites screen</string>
-    <string name="category_rings">category_rings</string>
-    <string name="category_flowers">category_flowers</string>
-    <string name="category_makeup">category_makeup</string>
-    <string name="category_hair">category_hair</string>
     <string name="category_dresses">category_dresses</string>
     <string name="category_photographers">category_photographers</string>
+    <string name="category_hair_and_makeup">category_hair_and_makeup</string>
     <string name="category_halls">category_halls</string>
     <string name="category_djs">category_djs</string>
     <string name="category_suits">category_suits</string>
@@ -59,7 +56,6 @@
     <string name="supplier_name">Supplier Name</string>
     <string name="checklist">Checklist</string>
     <string name="tips">Tips</string>
-    <string name="category_hair_and_makeup">category_hair_and_makeup</string>
     <string name="remove_from_fev">Remove from fev</string>
     <string name="no_favorites_yet">No favorites yet</string>
     <string name="favorites_list">Favorites list</string>
@@ -118,6 +114,13 @@
     <string name="chat_screen_placeholder">Chat screen placeholder</string>
     <string name="_0_0">0.0</string>
     <string name="_0">(0)</string>
+
+    <string name="supplier_dashboard">Supplier Dashboard</string>
+    <string name="supplier_gallery">Manage Gallery</string>
+    <string name="supplier_availability">Manage Availability</string>
+    <string name="category_hair_makeup">Hair &amp; Makeup</string>
+    <string name="letsgetweddi">Let\'sGetWeddi</string>
+    <string name="add_global_tip">Add Global Tip</string>
 
 
 </resources>

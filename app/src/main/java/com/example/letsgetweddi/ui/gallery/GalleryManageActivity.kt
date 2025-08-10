@@ -1,4 +1,4 @@
-package com.example.letsgetweddi.ui.supplier
+package com.example.letsgetweddi.ui.gallery
 
 import android.net.Uri
 import android.os.Bundle
@@ -7,11 +7,11 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.letsgetweddi.R
 import com.example.letsgetweddi.utils.RoleManager
 
-class SupplierCalendarActivity : AppCompatActivity() {
+class GalleryManageActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_supplier_calendar)
+        setContentView(R.layout.activity_gallery_manage)
 
         val supplierId = extractSupplierIdFromDeepLink(intent?.data)
         RoleManager.isSupplier(this) { isSupplier, cachedSid ->

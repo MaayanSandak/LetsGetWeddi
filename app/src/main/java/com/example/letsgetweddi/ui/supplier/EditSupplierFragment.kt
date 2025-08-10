@@ -10,11 +10,11 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.fragment.app.Fragment
 import com.example.letsgetweddi.R
+import com.example.letsgetweddi.utils.UiPermissions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
 import com.squareup.picasso.Picasso
-import java.util.*
 
 class EditSupplierFragment : Fragment() {
 
@@ -26,13 +26,19 @@ class EditSupplierFragment : Fragment() {
     private lateinit var editCategory: EditText
     private lateinit var editPhone: EditText
     private lateinit var buttonSave: Button
+
     private var imageUri: Uri? = null
-    private val uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    private var supplierId: String? = null
+    private var canEdit: Boolean = false
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        supplierId = arguments?.getString("supplierId")
+    }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+    ): View {
         val view = inflater.inflate(R.layout.fragment_edit_supplier, container, false)
 
         imageSupplier = view.findViewById(R.id.imageSupplier)
@@ -45,99 +51,100 @@ class EditSupplierFragment : Fragment() {
         buttonSave = view.findViewById(R.id.buttonSaveSupplier)
 
         loadSupplierData()
+        applyPermissions()
 
         buttonSelectImage.setOnClickListener {
+            if (!canEdit) return@setOnClickListener
             val intent = Intent(Intent.ACTION_GET_CONTENT)
             intent.type = "image/*"
-            startActivityForResult(intent, 100)
+            startActivityForResult(intent, 1001)
         }
 
         buttonSave.setOnClickListener {
-            saveSupplierData()
+            if (canEdit) saveSupplier() else Toast.makeText(requireContext(), "View-only", Toast.LENGTH_SHORT).show()
         }
 
         return view
     }
 
+    private fun applyPermissions() {
+        val id = supplierId ?: return
+        UiPermissions.checkOwner(id) { owner ->
+            canEdit = owner
+            buttonSelectImage.visibility = if (owner) View.VISIBLE else View.GONE
+            buttonSave.visibility = if (owner) View.VISIBLE else View.GONE
+
+            editName.isEnabled = owner
+            editDescription.isEnabled = owner
+            editLocation.isEnabled = owner
+            editCategory.isEnabled = owner
+            editPhone.isEnabled = owner
+        }
+    }
+
     private fun loadSupplierData() {
-        val ref = FirebaseDatabase.getInstance().getReference("Suppliers").child(uid)
-        ref.get().addOnSuccessListener { snapshot ->
-            editName.setText(snapshot.child("name").value?.toString() ?: "")
-            editDescription.setText(snapshot.child("description").value?.toString() ?: "")
-            editLocation.setText(snapshot.child("location").value?.toString() ?: "")
-            editCategory.setText(snapshot.child("category").value?.toString() ?: "")
-            editPhone.setText(snapshot.child("phone").value?.toString() ?: "")
+        val id = supplierId ?: return
+        val ref = FirebaseDatabase.getInstance().getReference("Suppliers").child(id)
+        ref.get().addOnSuccessListener { s ->
+            val name = s.child("name").value?.toString() ?: ""
+            val desc = s.child("description").value?.toString() ?: ""
+            val loc = s.child("location").value?.toString() ?: ""
+            val cat = s.child("category").value?.toString() ?: ""
+            val phone = s.child("phone").value?.toString() ?: ""
+            val image = s.child("imageUrl").value?.toString() ?: ""
 
-            val imageUrl = snapshot.child("imageUrl").value?.toString() ?: ""
-            if (imageUrl.isNotEmpty()) {
-                Picasso.get().load(imageUrl).into(imageSupplier)
+            editName.setText(name)
+            editDescription.setText(desc)
+            editLocation.setText(loc)
+            editCategory.setText(cat)
+            editPhone.setText(phone)
+            if (image.isNotBlank()) {
+                Picasso.get().load(image).fit().centerCrop().into(imageSupplier)
             }
         }
     }
 
-    private fun saveSupplierData() {
-        val name = editName.text.toString().trim()
-        val description = editDescription.text.toString().trim()
-        val location = editLocation.text.toString().trim()
-        val category = editCategory.text.toString().trim()
-        val phone = editPhone.text.toString().trim()
-
-        if (name.isEmpty() || description.isEmpty() || location.isEmpty() || category.isEmpty() || phone.isEmpty()) {
-            Toast.makeText(requireContext(), "Please fill in all fields", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if (imageUri != null) {
-            val storageRef = FirebaseStorage.getInstance()
-                .getReference("supplier_images/$uid/${UUID.randomUUID()}")
-            storageRef.putFile(imageUri!!)
-                .addOnSuccessListener {
-                    storageRef.downloadUrl.addOnSuccessListener { uri ->
-                        saveToDatabase(name, description, location, category, phone, uri.toString())
-                    }
-                }
-                .addOnFailureListener {
-                    Toast.makeText(requireContext(), "Image upload failed", Toast.LENGTH_SHORT).show()
-                }
-        } else {
-            saveToDatabase(name, description, location, category, phone, null)
-        }
-    }
-
-    private fun saveToDatabase(
-        name: String,
-        description: String,
-        location: String,
-        category: String,
-        phone: String,
-        imageUrl: String?
-    ) {
-        val ref = FirebaseDatabase.getInstance().getReference("Suppliers").child(uid)
-        val supplierData = mutableMapOf(
-            "name" to name,
-            "description" to description,
-            "location" to location,
-            "category" to category,
-            "phone" to phone
+    private fun saveSupplier() {
+        val id = supplierId ?: return
+        val map = hashMapOf<String, Any>(
+            "name" to editName.text.toString().trim(),
+            "description" to editDescription.text.toString().trim(),
+            "location" to editLocation.text.toString().trim(),
+            "category" to editCategory.text.toString().trim(),
+            "phone" to editPhone.text.toString().trim()
         )
-        if (imageUrl != null) {
-            supplierData["imageUrl"] = imageUrl
-        }
 
-        ref.setValue(supplierData)
+        FirebaseDatabase.getInstance().getReference("Suppliers")
+            .child(id).updateChildren(map)
+            .addOnSuccessListener { Toast.makeText(requireContext(), "Saved", Toast.LENGTH_SHORT).show() }
+            .addOnFailureListener { Toast.makeText(requireContext(), "Failed", Toast.LENGTH_SHORT).show() }
+
+        val uri = imageUri ?: return
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val path = "supplier_headers/$uid/$id/header.jpg"
+        FirebaseStorage.getInstance().reference.child(path)
+            .putFile(uri)
             .addOnSuccessListener {
-                Toast.makeText(requireContext(), "Supplier details saved", Toast.LENGTH_SHORT).show()
-            }
-            .addOnFailureListener {
-                Toast.makeText(requireContext(), "Failed to save details", Toast.LENGTH_SHORT).show()
+                it.storage.downloadUrl.addOnSuccessListener { url ->
+                    FirebaseDatabase.getInstance().getReference("Suppliers")
+                        .child(id).child("imageUrl").setValue(url.toString())
+                }
             }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == 100 && resultCode == Activity.RESULT_OK && data?.data != null) {
-            imageUri = data.data
+        if (requestCode == 1001 && resultCode == Activity.RESULT_OK) {
+            imageUri = data?.data
             imageSupplier.setImageURI(imageUri)
+        }
+    }
+
+    companion object {
+        fun newInstance(supplierId: String): EditSupplierFragment {
+            val f = EditSupplierFragment()
+            f.arguments = Bundle().apply { putString("supplierId", supplierId) }
+            return f
         }
     }
 }

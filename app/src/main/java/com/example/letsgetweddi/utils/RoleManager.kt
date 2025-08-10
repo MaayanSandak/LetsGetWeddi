@@ -1,32 +1,46 @@
 package com.example.letsgetweddi.utils
 
-import com.example.letsgetweddi.data.FirebaseRefs
+import android.content.Context
+import android.content.SharedPreferences
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
+import com.google.firebase.database.FirebaseDatabase
 
 object RoleManager {
+    private const val PREF = "role_prefs"
+    private const val KEY_ROLE = "role"
+    private const val KEY_SUPPLIER_ID = "supplier_id"
 
-    interface Callback {
-        fun onRoleLoaded(role: String, supplierId: String?)
-        fun onNoUser()
+    fun cache(context: Context, role: String?, supplierId: String?) {
+        prefs(context).edit()
+            .putString(KEY_ROLE, role)
+            .putString(KEY_SUPPLIER_ID, supplierId)
+            .apply()
     }
 
-    fun load(callback: Callback) {
-        val user = FirebaseAuth.getInstance().currentUser ?: run {
-            callback.onNoUser()
-            return
+    fun getCachedRole(context: Context): String? = prefs(context).getString(KEY_ROLE, null)
+    fun getCachedSupplierId(context: Context): String? = prefs(context).getString(KEY_SUPPLIER_ID, null)
+
+    fun load(context: Context, onResult: (role: String?, supplierId: String?) -> Unit) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        if (uid == null) {
+            onResult(null, null); return
         }
-        val uid = user.uid
-        val ref = FirebaseRefs.users().child(uid)
-        ref.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val role = snapshot.child("role").getValue(String::class.java) ?: "client"
-                val supplierId = snapshot.child("supplierId").getValue(String::class.java)
-                callback.onRoleLoaded(role, supplierId)
-            }
-            override fun onCancelled(error: DatabaseError) {
-                callback.onRoleLoaded("client", null)
-            }
-        })
+        val ref = FirebaseDatabase.getInstance().getReference("Users").child(uid)
+        ref.get().addOnSuccessListener { s ->
+            val role = s.child("role").getValue(String::class.java)
+            val supplierId = s.child("supplierId").getValue(String::class.java)
+            cache(context, role, supplierId)
+            onResult(role, supplierId)
+        }.addOnFailureListener { onResult(null, null) }
     }
+
+    fun isSupplier(context: Context, onResult: (Boolean, String?) -> Unit) {
+        val cached = getCachedRole(context)
+        val sid = getCachedSupplierId(context)
+        if (cached != null) { onResult(cached == "supplier", sid); return }
+        load(context) { role, supplierId -> onResult(role == "supplier", supplierId) }
+    }
+
+    private fun prefs(context: Context): SharedPreferences =
+        context.getSharedPreferences(PREF, Context.MODE_PRIVATE)
 }

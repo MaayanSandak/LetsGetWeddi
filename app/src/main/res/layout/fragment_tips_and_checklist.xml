@@ -1,67 +1,74 @@
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="12dp">
+    android:fillViewport="true"
+    android:padding="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <com.google.android.material.textview.MaterialTextView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/checklist"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:paddingBottom="8dp" />
+            android:layout_marginBottom="8dp" />
 
-        <SearchView
+        <androidx.appcompat.widget.SearchView
             android:id="@+id/searchViewChecklist"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:queryHint="Search tasks..."
-            android:iconifiedByDefault="false" />
+            android:queryHint="Search checklist" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonAddTask"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/add_task"
+            android:layout_marginTop="8dp" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerChecklist"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:nestedScrollingEnabled="false"
-            android:layout_marginTop="6dp" />
-
-        <Button
-            android:id="@+id/buttonAddTask"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/add_task"
-            android:layout_gravity="center"
-            android:layout_marginTop="16dp" />
+            android:overScrollMode="never"
+            android:layout_marginTop="8dp" />
 
         <View
             android:layout_width="match_parent"
             android:layout_height="24dp" />
 
-        <TextView
-            android:layout_width="wrap_content"
+        <com.google.android.material.textview.MaterialTextView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/tips"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:paddingBottom="8dp" />
+            android:layout_marginBottom="8dp" />
 
-        <SearchView
+        <androidx.appcompat.widget.SearchView
             android:id="@+id/searchViewTips"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:queryHint="Search tips..."
-            android:iconifiedByDefault="false" />
+            android:queryHint="Search tips" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonAddTip"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/add_global_tip"
+            android:layout_marginTop="8dp" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerTips"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:nestedScrollingEnabled="false"
-            android:layout_marginTop="6dp" />
+            android:overScrollMode="never"
+            android:layout_marginTop="8dp" />
+
     </LinearLayout>
-</ScrollView>
+</androidx.core.widget.NestedScrollView>

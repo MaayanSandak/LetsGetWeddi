@@ -37,7 +37,7 @@
                 <item
                     android:id="@+id/nav_hair_and_makeup"
                     android:icon="@drawable/hair"
-                    android:title="category_hair_makeup" />
+                    android:title="@string/category_hair_and_makeup" />
             </menu>
         </item>
 
@@ -56,17 +56,17 @@
         <item
             android:id="@+id/nav_supplier_dashboard"
             android:icon="@drawable/home_page"
-            android:title="supplier_dashboard" />
+            android:title="@string/supplier_dashboard" />
 
         <item
             android:id="@+id/nav_supplier_gallery"
             android:icon="@drawable/ic_menu_gallery"
-            android:title="supplier_gallery" />
+            android:title="@string/supplier_gallery" />
 
         <item
             android:id="@+id/nav_supplier_availability"
             android:icon="@drawable/ic_menu_camera"
-            android:title="supplier_availability" />
+            android:title="@string/supplier_availability" />
 
 
         <item
