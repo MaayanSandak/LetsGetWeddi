@@ -2,10 +2,12 @@ package com.example.letsgetweddi.ui
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.*
+import android.view.View
+import android.widget.EditText
+import android.widget.RadioGroup
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.letsgetweddi.R
-import com.example.letsgetweddi.model.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 
@@ -18,6 +20,12 @@ class RegisterActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
 
+        val btnGoLogin = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnGoLogin)
+        btnGoLogin.setOnClickListener {
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish()
+        }
+
         auth = FirebaseAuth.getInstance()
         db = FirebaseDatabase.getInstance()
 
@@ -25,12 +33,12 @@ class RegisterActivity : AppCompatActivity() {
         val emailEditText = findViewById<EditText>(R.id.editTextEmail)
         val passwordEditText = findViewById<EditText>(R.id.editTextPassword)
         val roleGroup = findViewById<RadioGroup>(R.id.roleGroup)
-        val createAccountButton = findViewById<Button>(R.id.buttonCreateAccount)
+        val createAccountButton = findViewById<View>(R.id.buttonCreateAccount)
 
         createAccountButton.setOnClickListener {
-            val name = nameEditText.text.toString().trim()
-            val email = emailEditText.text.toString().trim()
-            val password = passwordEditText.text.toString().trim()
+            val name = nameEditText.text?.toString()?.trim().orEmpty()
+            val email = emailEditText.text?.toString()?.trim().orEmpty()
+            val password = passwordEditText.text?.toString()?.trim().orEmpty()
             val selectedRoleId = roleGroup.checkedRadioButtonId
 
             if (name.isEmpty() || email.isEmpty() || password.isEmpty() || selectedRoleId == -1) {
@@ -38,26 +46,32 @@ class RegisterActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            val role = findViewById<RadioButton>(selectedRoleId).text.toString()
+            val role = if (selectedRoleId != -1)
+                findViewById<View>(selectedRoleId).resources.getResourceEntryName(selectedRoleId)
+            else
+                ""
 
             auth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        val uid = auth.currentUser?.uid ?: ""
-                        val user = User(uid, name, email, role)
-
-                        db.getReference("Users").child(uid).setValue(user)
-                            .addOnSuccessListener {
-                                Toast.makeText(this, "Account created!", Toast.LENGTH_SHORT).show()
-                                startActivity(Intent(this, LoginActivity::class.java))
-                                finish()
-                            }
-                            .addOnFailureListener {
-                                Toast.makeText(this, "Failed to save user data.", Toast.LENGTH_SHORT).show()
-                            }
-                    } else {
-                        Toast.makeText(this, "Registration failed. Try again.", Toast.LENGTH_SHORT).show()
-                    }
+                .addOnSuccessListener { res ->
+                    val uid = res.user?.uid ?: return@addOnSuccessListener
+                    val userMap = mapOf(
+                        "uid" to uid,
+                        "fullName" to name,
+                        "email" to email,
+                        "clientType" to role
+                    )
+                    db.reference.child("users").child(uid).setValue(userMap)
+                        .addOnSuccessListener {
+                            Toast.makeText(this, "Account created", Toast.LENGTH_SHORT).show()
+                            startActivity(Intent(this, LoginActivity::class.java))
+                            finish()
+                        }
+                        .addOnFailureListener {
+                            Toast.makeText(this, it.localizedMessage ?: "Failed to save user", Toast.LENGTH_SHORT).show()
+                        }
+                }
+                .addOnFailureListener {
+                    Toast.makeText(this, it.localizedMessage ?: "Register failed", Toast.LENGTH_SHORT).show()
                 }
         }
     }
