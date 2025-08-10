@@ -7,15 +7,17 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.letsgetweddi.adapters.SupplierAdapter
+import com.example.letsgetweddi.data.FirebaseRefs
 import com.example.letsgetweddi.databinding.FragmentFavoritesBinding
 import com.example.letsgetweddi.model.Supplier
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
 
 class FavoritesFragment : Fragment() {
 
     private lateinit var binding: FragmentFavoritesBinding
-    private lateinit var database: DatabaseReference
     private val favorites = mutableListOf<Supplier>()
     private lateinit var adapter: SupplierAdapter
 
@@ -28,16 +30,12 @@ class FavoritesFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         adapter = SupplierAdapter(favorites, isFavorites = true)
         binding.recyclerFavorites.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerFavorites.adapter = adapter
 
         val user = FirebaseAuth.getInstance().currentUser ?: return
-        val userId = user.uid
-
-        database = FirebaseDatabase.getInstance().getReference("favorites").child(userId)
-        database.addValueEventListener(object : ValueEventListener {
+        FirebaseRefs.favorites(user.uid).addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 favorites.clear()
                 for (child in snapshot.children) {
@@ -50,7 +48,6 @@ class FavoritesFragment : Fragment() {
                 adapter.notifyDataSetChanged()
                 binding.textEmpty.visibility = if (favorites.isEmpty()) View.VISIBLE else View.GONE
             }
-
             override fun onCancelled(error: DatabaseError) {
                 binding.textEmpty.visibility = View.VISIBLE
             }

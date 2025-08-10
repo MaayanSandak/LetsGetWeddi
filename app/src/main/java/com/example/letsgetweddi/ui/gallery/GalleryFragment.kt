@@ -6,7 +6,10 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
+import com.example.letsgetweddi.data.DbPaths
 import com.example.letsgetweddi.databinding.FragmentGalleryBinding
+import com.google.firebase.database.*
+import com.google.firebase.storage.FirebaseStorage
 
 class GalleryFragment : Fragment() {
 
@@ -42,9 +45,45 @@ class GalleryFragment : Fragment() {
     }
 
     private fun loadImages() {
-        // imageUrls.clear()
-        // imageUrls.addAll(fetched)
-        // adapter.notifyDataSetChanged()
+        imageUrls.clear()
+        val dbRef = FirebaseDatabase.getInstance().getReference(DbPaths.supplier(supplierId)).child("gallery")
+        dbRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists() && snapshot.children.count() > 0) {
+                    imageUrls.clear()
+                    for (c in snapshot.children) {
+                        c.getValue(String::class.java)?.let { imageUrls.add(it) }
+                    }
+                    adapter.notifyDataSetChanged()
+                } else {
+                    loadFromStorage()
+                }
+            }
+            override fun onCancelled(error: DatabaseError) {
+                loadFromStorage()
+            }
+        })
+    }
+
+    private fun loadFromStorage() {
+        val storageRef = FirebaseStorage.getInstance().reference.child("supplier_galleries").child(supplierId)
+        storageRef.listAll().addOnSuccessListener { listResult ->
+            if (listResult.items.isEmpty()) {
+                adapter.notifyDataSetChanged()
+                return@addOnSuccessListener
+            }
+            var pending = listResult.items.size
+            listResult.items.forEach { item ->
+                item.downloadUrl.addOnSuccessListener { uri ->
+                    imageUrls.add(uri.toString())
+                }.addOnCompleteListener {
+                    pending -= 1
+                    if (pending == 0) adapter.notifyDataSetChanged()
+                }
+            }
+        }.addOnFailureListener {
+            adapter.notifyDataSetChanged()
+        }
     }
 
     override fun onDestroyView() {
@@ -54,7 +93,6 @@ class GalleryFragment : Fragment() {
 
     companion object {
         private const val ARG_SUPPLIER_ID = "supplierId"
-
         fun newInstance(supplierId: String): GalleryFragment {
             val f = GalleryFragment()
             f.arguments = Bundle().apply { putString(ARG_SUPPLIER_ID, supplierId) }

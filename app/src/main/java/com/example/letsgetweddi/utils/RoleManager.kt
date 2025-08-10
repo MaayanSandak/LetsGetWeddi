@@ -1,5 +1,6 @@
 package com.example.letsgetweddi.utils
 
+import com.example.letsgetweddi.data.FirebaseRefs
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 
@@ -16,7 +17,7 @@ object RoleManager {
             return
         }
         val uid = user.uid
-        val ref = FirebaseDatabase.getInstance().getReference("users").child(uid)
+        val ref = FirebaseRefs.users().child(uid)
         ref.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val role = snapshot.child("role").getValue(String::class.java) ?: "client"
