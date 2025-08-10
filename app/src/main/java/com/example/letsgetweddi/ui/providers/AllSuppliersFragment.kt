@@ -41,7 +41,6 @@ class AllSuppliersFragment : Fragment() {
 
         loadSuppliers()
 
-        // חיפוש ב-SearchView
         binding.searchViewSuppliers.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 filterSuppliers(query ?: "", binding.spinnerLocation.selectedItem.toString())
@@ -54,7 +53,6 @@ class AllSuppliersFragment : Fragment() {
             }
         })
 
-        // בחירת מיקום ב-Spinner
         binding.spinnerLocation.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
                 parent: android.widget.AdapterView<*>?,
@@ -69,7 +67,6 @@ class AllSuppliersFragment : Fragment() {
             }
 
             override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {
-                // לא עושים כלום במקרה שאין בחירה
             }
         }
     }

@@ -1,82 +1,93 @@
 package com.example.letsgetweddi.adapters
 
+import android.content.Context
 import android.content.Intent
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.example.letsgetweddi.databinding.ItemSupplierBinding
+import com.example.letsgetweddi.R
+import com.example.letsgetweddi.data.FirebaseRefs
 import com.example.letsgetweddi.model.Supplier
-import com.example.letsgetweddi.ui.providers.ProviderDetailsActivity
+import com.example.letsgetweddi.ui.ProviderDetailsActivity
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
 import com.squareup.picasso.Picasso
 
 class SupplierAdapter(
-    private val suppliers: MutableList<Supplier>,
+    private val items: MutableList<Supplier>,
     private val isFavorites: Boolean = false
-) : RecyclerView.Adapter<SupplierAdapter.SupplierViewHolder>() {
+) : RecyclerView.Adapter<SupplierAdapter.VH>() {
 
-    inner class SupplierViewHolder(private val binding: ItemSupplierBinding) :
-        RecyclerView.ViewHolder(binding.root) {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_supplier, parent, false)
+        return VH(view as ViewGroup)
+    }
 
-        fun bind(supplier: Supplier) {
-            val context = binding.root.context
-
-            binding.textName.text = supplier.name ?: ""
-            binding.textDescription.text = supplier.description ?: ""
-            binding.textLocation.text = supplier.location ?: ""
-
-            val imageUrl = supplier.imageUrl
-            if (!imageUrl.isNullOrEmpty()) {
-                Picasso.get().load(imageUrl).into(binding.imageSupplier)
-            } else {
-                binding.imageSupplier.setImageDrawable(null)
-            }
-
-            binding.root.setOnClickListener {
-                val intent = Intent(context, ProviderDetailsActivity::class.java).apply {
-                    putExtra("id", supplier.id)
-                    putExtra("name", supplier.name)
-                    putExtra("description", supplier.description)
-                    putExtra("location", supplier.location)
-                    putExtra("imageUrl", supplier.imageUrl)
-                    putExtra("phone", supplier.phone)
-                    putExtra("category", supplier.category)
-                }
-                context.startActivity(intent)
-            }
-
-            binding.buttonRemove.visibility = if (isFavorites) View.VISIBLE else View.GONE
-            binding.buttonRemove.setOnClickListener {
-                val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@setOnClickListener
-                val supplierId = supplier.id ?: return@setOnClickListener
-
-                FirebaseDatabase.getInstance().getReference("favorites")
-                    .child(uid)
-                    .child(supplierId)
-                    .removeValue()
-                    .addOnSuccessListener {
-                        val index = this@SupplierViewHolder.adapterPosition
-                        if (index != RecyclerView.NO_POSITION) {
-                            suppliers.removeAt(index)
-                            notifyItemRemoved(index)
-                        }
-                    }
-            }
+    override fun onBindViewHolder(holder: VH, position: Int) {
+        val item = items[position]
+        holder.bind(holder.itemView.context, item, isFavorites) { pos ->
+            if (pos != RecyclerView.NO_POSITION) notifyItemChanged(pos)
+        }
+        holder.itemView.setOnClickListener {
+            val ctx = holder.itemView.context
+            val intent = Intent(ctx, ProviderDetailsActivity::class.java)
+            intent.putExtra("supplierId", item.id ?: "")
+            ctx.startActivity(intent)
         }
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SupplierViewHolder {
-        val binding = ItemSupplierBinding.inflate(
-            LayoutInflater.from(parent.context), parent, false
-        )
-        return SupplierViewHolder(binding)
-    }
+    override fun getItemCount(): Int = items.size
 
-    override fun onBindViewHolder(holder: SupplierViewHolder, position: Int) {
-        holder.bind(suppliers[position])
-    }
+    inner class VH(private val root: ViewGroup) : RecyclerView.ViewHolder(root) {
+        private val image: ImageView = root.findViewById(R.id.imageSupplier)
+        private val name: TextView = root.findViewById(R.id.textName)
+        private val location: TextView = root.findViewById(R.id.textLocation)
+        private val subtitle: TextView = root.findViewById(R.id.textSubtitle)
+        private val fav: ImageButton = root.findViewById(R.id.buttonFavorite)
 
-    override fun getItemCount(): Int = suppliers.size
+        fun bind(ctx: Context, s: Supplier, isFavScreen: Boolean, onFavToggled: (Int) -> Unit) {
+            name.text = s.name ?: ""
+            location.text = s.location ?: ""
+            subtitle.text = ctx.getString(R.string.see_details)
+
+            val url = s.imageUrl.orEmpty()
+            if (url.isNotBlank()) {
+                Picasso.get()
+                    .load(url)
+                    .placeholder(R.drawable.rounded_card_placeholder)
+                    .fit()
+                    .centerCrop()
+                    .into(image)
+            } else {
+                image.setImageResource(R.drawable.rounded_card_placeholder)
+            }
+
+            fav.setImageResource(if (isFavScreen) R.drawable.ic_favorite else R.drawable.ic_favorite_border)
+            fav.contentDescription = ctx.getString(
+                if (isFavScreen) R.string.remove_from_favorites else R.string.add_to_favorites
+            )
+
+            fav.setOnClickListener {
+                val user = FirebaseAuth.getInstance().currentUser ?: return@setOnClickListener
+                val ref = FirebaseRefs.favorites(user.uid)
+                val id = s.id ?: return@setOnClickListener
+
+                if (isFavScreen) {
+                    ref.child(id).removeValue()
+                    val pos = bindingAdapterPosition
+                    if (pos != RecyclerView.NO_POSITION) {
+                        items.removeAt(pos)
+                        notifyItemRemoved(pos)
+                    }
+                } else {
+                    ref.child(id).setValue(s)
+                    fav.setImageResource(R.drawable.ic_favorite)
+                    fav.contentDescription = ctx.getString(R.string.remove_from_favorites)
+                    onFavToggled(bindingAdapterPosition)
+                }
+            }
+        }
+    }
 }

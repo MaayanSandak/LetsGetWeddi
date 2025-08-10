@@ -25,9 +25,7 @@ class GalleryFragment : Fragment() {
         supplierId = arguments?.getString(ARG_SUPPLIER_ID).orEmpty()
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentGalleryBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -35,26 +33,24 @@ class GalleryFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         adapter = ImageAdapter(imageUrls)
-        setupRecycler()
+        binding.recyclerView.layoutManager = GridLayoutManager(requireContext(), 3)
+        binding.recyclerView.adapter = adapter
         loadImages()
     }
 
-    private fun setupRecycler() {
-        binding.recyclerView.layoutManager = GridLayoutManager(requireContext(), 3)
-        binding.recyclerView.adapter = adapter
-    }
-
     private fun loadImages() {
+        binding.progressBar.visibility = View.VISIBLE
+        binding.textEmpty.visibility = View.GONE
         imageUrls.clear()
+
         val dbRef = FirebaseDatabase.getInstance().getReference(DbPaths.supplier(supplierId)).child("gallery")
         dbRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists() && snapshot.children.count() > 0) {
-                    imageUrls.clear()
                     for (c in snapshot.children) {
                         c.getValue(String::class.java)?.let { imageUrls.add(it) }
                     }
-                    adapter.notifyDataSetChanged()
+                    finishLoad()
                 } else {
                     loadFromStorage()
                 }
@@ -67,23 +63,27 @@ class GalleryFragment : Fragment() {
 
     private fun loadFromStorage() {
         val storageRef = FirebaseStorage.getInstance().reference.child("supplier_galleries").child(supplierId)
-        storageRef.listAll().addOnSuccessListener { listResult ->
-            if (listResult.items.isEmpty()) {
-                adapter.notifyDataSetChanged()
+        storageRef.listAll().addOnSuccessListener { list ->
+            if (list.items.isEmpty()) {
+                finishLoad()
                 return@addOnSuccessListener
             }
-            var pending = listResult.items.size
-            listResult.items.forEach { item ->
+            var pending = list.items.size
+            list.items.forEach { item ->
                 item.downloadUrl.addOnSuccessListener { uri ->
                     imageUrls.add(uri.toString())
                 }.addOnCompleteListener {
                     pending -= 1
-                    if (pending == 0) adapter.notifyDataSetChanged()
+                    if (pending == 0) finishLoad()
                 }
             }
-        }.addOnFailureListener {
-            adapter.notifyDataSetChanged()
-        }
+        }.addOnFailureListener { finishLoad() }
+    }
+
+    private fun finishLoad() {
+        binding.progressBar.visibility = View.GONE
+        adapter.notifyDataSetChanged()
+        binding.textEmpty.visibility = if (imageUrls.isEmpty()) View.VISIBLE else View.GONE
     }
 
     override fun onDestroyView() {

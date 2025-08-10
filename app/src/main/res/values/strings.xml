@@ -99,6 +99,25 @@
     <string name="open_chat">Open chat</string>
     <string name="contact_via_whatsapp">Contact via WhatsApp</string>
     <string name="provider_image">Provider image</string>
+    <string name="empty_list">empty_list</string>
+    <string name="no_images">no_images</string>
+    <string name="see_details">see_details</string>
+    <string name="no_availability">no_availability</string>
+    <string name="gallery">gallery</string>
+    <string name="contact_whatsapp">contact_whatsapp</string>
+    <string name="anonymous">anonymous</string>
+    <string name="great">Great!</string>
+    <string name="search_hint">Search suppliers</string>
+    <string name="remove_from_favorites">Remove from favorites</string>
+
+    <string name="availability_prefix">Available dates: %1$s</string>
+    <string name="rating_count">(%1$d)</string>
+
+    <string name="back">Back</string>
+    <string name="chat">Chat</string>
+    <string name="chat_screen_placeholder">Chat screen placeholder</string>
+    <string name="_0_0">0.0</string>
+    <string name="_0">(0)</string>
 
 
 </resources>

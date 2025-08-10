@@ -2,30 +2,29 @@ package com.example.letsgetweddi.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.example.letsgetweddi.databinding.ItemReviewBinding
-import com.example.letsgetweddi.model.Review
+import com.example.letsgetweddi.R
 
-class ReviewAdapter(private val reviews: List<Review>) :
-    RecyclerView.Adapter<ReviewAdapter.ReviewViewHolder>() {
+class ReviewAdapter(
+    private val items: MutableList<Pair<String, String>>
+) : RecyclerView.Adapter<ReviewAdapter.VH>() {
 
-    inner class ReviewViewHolder(private val binding: ItemReviewBinding) :
-        RecyclerView.ViewHolder(binding.root) {
-        fun bind(review: Review) {
-            binding.textReviewerName.text = review.name
-            binding.ratingBarReview.rating = review.rating
-            binding.textReviewComment.text = review.comment
-        }
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
+        val v = LayoutInflater.from(parent.context).inflate(R.layout.item_review, parent, false) as ViewGroup
+        return VH(v)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ReviewViewHolder {
-        val binding = ItemReviewBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return ReviewViewHolder(binding)
+    override fun onBindViewHolder(holder: VH, position: Int) {
+        val (author, content) = items[position]
+        holder.author.text = if (author.isBlank()) holder.itemView.context.getString(R.string.anonymous) else author
+        holder.content.text = content
     }
 
-    override fun onBindViewHolder(holder: ReviewViewHolder, position: Int) {
-        holder.bind(reviews[position])
-    }
+    override fun getItemCount(): Int = items.size
 
-    override fun getItemCount(): Int = reviews.size
+    inner class VH(root: ViewGroup) : RecyclerView.ViewHolder(root) {
+        val author: TextView = root.findViewById(R.id.textAuthor)
+        val content: TextView = root.findViewById(R.id.textContent)
+    }
 }

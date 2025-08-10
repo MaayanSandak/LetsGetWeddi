@@ -1,140 +1,159 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@drawable/bg_gradient"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="12dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            style="@style/Weddi.Toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize">
+
+            <ImageButton
+                android:id="@+id/toolbarNavBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/back"
+                app:srcCompat="@drawable/ic_arrow_back" />
+        </com.google.android.material.appbar.MaterialToolbar>
 
         <ImageView
-            android:id="@+id/imageProvider"
+            android:id="@+id/imageHeader"
             android:layout_width="match_parent"
-            android:layout_height="200dp"
+            android:layout_height="190dp"
             android:scaleType="centerCrop"
-            android:contentDescription="@string/provider_image" />
+            android:background="@drawable/rounded_card"
+            android:layout_marginTop="12dp" />
 
         <TextView
             android:id="@+id/textName"
+            style="@style/Weddi.Headline"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textStyle="bold"
-            android:textSize="20sp"
-            android:paddingTop="8dp"
-            android:text="@string/name" />
-
-        <TextView
-            android:id="@+id/textDescription"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingTop="4dp"
-            android:text="@string/description" />
+            android:layout_marginTop="12dp"
+            android:text="@string/supplier_name" />
 
         <TextView
             android:id="@+id/textLocation"
+            style="@style/Weddi.Body"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="4dp"
             android:text="@string/location" />
 
-        <FrameLayout
-            android:id="@+id/galleryContainer"
+        <LinearLayout
+            android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp" />
+            android:layout_marginTop="12dp">
+
+            <ImageButton
+                android:id="@+id/buttonFav"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/app_name"
+                app:srcCompat="@drawable/ic_favorite_border" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonWhatsApp"
+                style="@style/Weddi.Button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:text="@string/contact_whatsapp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonChat"
+                style="@style/Weddi.Button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:text="@string/open_chat" />
+        </LinearLayout>
 
         <TextView
+            android:id="@+id/textAvailability"
+            style="@style/Weddi.Body"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/availability"
-            android:textStyle="bold"
-            android:layout_marginTop="12dp" />
+            android:layout_marginTop="12dp"
+            android:text="@string/no_availability" />
 
-        <com.kizitonwose.calendar.view.CalendarView
-            android:id="@+id/calendarAvailability"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-        <ProgressBar
-            android:id="@+id/progressBar"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginTop="8dp"
-            android:layout_gravity="center_horizontal"
-            android:visibility="gone" />
-
-
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonFavorite"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/add_to_favorites"
-            app:icon="@drawable/ic_favorite_border_24"
-            app:iconGravity="textStart"
-            app:iconPadding="8dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonContact"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/contact_via_whatsapp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonChat"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/open_chat" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonEditSupplier"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/edit_supplier"
-            android:visibility="gone" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/reviews"
-            android:paddingTop="16dp" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerReviews"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-        <RatingBar
-            android:id="@+id/ratingBarNewReview"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:numStars="5"
-            android:stepSize="1" />
-
-        <com.google.android.material.textfield.TextInputLayout
+        <LinearLayout
+            android:background="@drawable/rounded_card"
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:layout_marginTop="12dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/editReviewComment"
+            <TextView
+                style="@style/Weddi.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/gallery" />
+
+            <FrameLayout
+                android:id="@+id/galleryContainer"
+                android:layout_width="match_parent"
+                android:layout_height="160dp"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:background="@drawable/rounded_card"
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:layout_marginTop="12dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    style="@style/Weddi.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/reviews" />
+
+                <TextView
+                    android:id="@+id/textRatingAvg"
+                    style="@style/Weddi.Headline"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/_0_0" />
+
+                <TextView
+                    android:id="@+id/textRatingCount"
+                    style="@style/Weddi.Body"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/_0" />
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerReviews"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="48dp"
-                android:paddingTop="12dp"
-                android:paddingBottom="12dp"
-                android:inputType="textMultiLine"
-                android:hint="@string/review_comment" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:nestedScrollingEnabled="false"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonSubmitReview"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/submit_review" />
     </LinearLayout>
 </ScrollView>

@@ -24,8 +24,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // אם אין משתמש מחובר — מעבר למסך ההתחברות (יושב אצלך תחת ui/)
         val user = FirebaseAuth.getInstance().currentUser
         if (user == null) {
             startActivity(Intent(this, LoginActivity::class.java))
@@ -35,8 +33,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        // ה-Toolbar נמצא ישירות ב-layout, לכן binding.toolbar (לא appBarMain.toolbar)
         setSupportActionBar(binding.toolbar)
 
         val toggle = ActionBarDrawerToggle(
@@ -85,7 +81,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         binding.navView.inflateMenu(menuRes)
     }
 
-    // יעד פתיחה כדי שלא יישאר מסך ריק
     private fun openDefaultDestination() {
         if (currentRole == "supplier") {
             startActivity(Intent(this, SupplierDashboardActivity::class.java))

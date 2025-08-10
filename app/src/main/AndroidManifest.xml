@@ -31,7 +31,7 @@
             android:exported="false" />
 
         <activity
-            android:name=".ui.providers.ProviderDetailsActivity"
+            android:name=".ui.ProviderDetailsActivity"
             android:exported="false" />
 
 

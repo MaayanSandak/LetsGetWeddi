@@ -1,26 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:background="@drawable/bg_gradient"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="8dp">
+    android:padding="12dp">
 
-    <SearchView
+    <include layout="@layout/include_toolbar"/>
+
+    <androidx.appcompat.widget.SearchView
         android:id="@+id/searchViewDjs"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:queryHint="Search DJs..."
-        android:iconifiedByDefault="false" />
+        android:queryHint="@string/search_hint" />
 
     <Spinner
         android:id="@+id/spinnerLocationDjs"
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:layout_marginTop="6dp" />
+        android:minHeight="48dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_djs"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="6dp" />
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingTop="8dp"
+        android:importantForAccessibility="no" />
 </LinearLayout>

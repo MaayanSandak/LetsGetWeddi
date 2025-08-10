@@ -1,9 +1,11 @@
 package com.example.letsgetweddi.ui.categories
 
 import android.os.Bundle
-import android.view.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import android.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.letsgetweddi.adapters.SupplierAdapter
@@ -14,7 +16,9 @@ import com.google.firebase.database.*
 
 class HairAndMakeupFragment : Fragment() {
 
-    private lateinit var binding: FragmentHairAndMakeupBinding
+    private var _binding: FragmentHairAndMakeupBinding? = null
+    private val binding get() = _binding!!
+
     private lateinit var database: DatabaseReference
     private lateinit var adapter: SupplierAdapter
     private val allSuppliers = mutableListOf<Supplier>()
@@ -22,27 +26,29 @@ class HairAndMakeupFragment : Fragment() {
     private val locationList = mutableListOf("All locations")
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        binding = FragmentHairAndMakeupBinding.inflate(inflater, container, false)
+        _binding = FragmentHairAndMakeupBinding.inflate(inflater, container, false)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         adapter = SupplierAdapter(filteredSuppliers)
         binding.recyclerHairAndMakeup.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerHairAndMakeup.adapter = adapter
 
-        binding.searchViewHairAndMakeup.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+        binding.searchViewHairAndMakeup.setOnQueryTextListener(object :
+            androidx.appcompat.widget.SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean { filter(); return true }
             override fun onQueryTextChange(newText: String?): Boolean { filter(); return true }
         })
 
-        val spinAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, locationList)
-        spinAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        binding.spinnerLocationHairAndMakeup.adapter = spinAdapter
-        binding.spinnerLocationHairAndMakeup.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) { filter() }
-            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        val spinnerAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, locationList)
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinnerLocationHairAndMakeup.adapter = spinnerAdapter
+        binding.spinnerLocationHairAndMakeup.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, v: View?, position: Int, id: Long) { filter() }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
         database = FirebaseDatabase.getInstance().getReference(DbPaths.SUPPLIERS)
@@ -52,16 +58,17 @@ class HairAndMakeupFragment : Fragment() {
                     allSuppliers.clear()
                     locationList.clear()
                     locationList.add("All locations")
-                    for (c in snapshot.children) {
-                        val s = c.getValue(Supplier::class.java)?.copy(
-                            id = c.child("id").getValue(String::class.java) ?: c.key
+                    for (child in snapshot.children) {
+                        val s = child.getValue(Supplier::class.java)?.copy(
+                            id = child.child("id").getValue(String::class.java) ?: child.key
                         )
                         if (s != null) {
                             allSuppliers.add(s)
-                            s.location?.takeIf { it.isNotBlank() }?.let { if (!locationList.contains(it)) locationList.add(it) }
+                            val loc = s.location?.trim().orEmpty()
+                            if (loc.isNotEmpty() && !locationList.contains(loc)) locationList.add(loc)
                         }
                     }
-                    spinAdapter.notifyDataSetChanged()
+                    spinnerAdapter.notifyDataSetChanged()
                     filter()
                 }
                 override fun onCancelled(error: DatabaseError) {}
@@ -69,8 +76,8 @@ class HairAndMakeupFragment : Fragment() {
     }
 
     private fun filter() {
-        val q = binding.searchViewHairAndMakeup.query.toString().lowercase()
-        val loc = binding.spinnerLocationHairAndMakeup.selectedItem.toString()
+        val q = binding.searchViewHairAndMakeup.query?.toString()?.lowercase()?.trim().orEmpty()
+        val loc = binding.spinnerLocationHairAndMakeup.selectedItem?.toString().orEmpty()
         filteredSuppliers.clear()
         filteredSuppliers.addAll(allSuppliers.filter { s ->
             val nameOk = s.name?.lowercase()?.contains(q) == true
@@ -78,5 +85,10 @@ class HairAndMakeupFragment : Fragment() {
             nameOk && locOk
         })
         adapter.notifyDataSetChanged()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }
