@@ -14,6 +14,7 @@ import com.example.letsgetweddi.ui.favorites.FavoritesFragment
 import com.example.letsgetweddi.ui.supplier.SupplierDashboardActivity
 import com.example.letsgetweddi.utils.RoleManager
 import com.google.android.material.navigation.NavigationView
+import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
@@ -23,15 +24,25 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // אם אין משתמש מחובר — מעבר למסך ההתחברות (יושב אצלך תחת ui/)
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user == null) {
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish()
+            return
+        }
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setSupportActionBar(binding.appBarMain.toolbar)
+        // ה-Toolbar נמצא ישירות ב-layout, לכן binding.toolbar (לא appBarMain.toolbar)
+        setSupportActionBar(binding.toolbar)
 
         val toggle = ActionBarDrawerToggle(
             this,
             binding.drawerLayout,
-            binding.appBarMain.toolbar,
+            binding.toolbar,
             R.string.navigation_drawer_open,
             R.string.navigation_drawer_close
         )
@@ -58,10 +69,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
 
             override fun onNoUser() {
-                currentRole = "client"
-                currentUserSupplierId = null
-                applyDrawerForRole()
-                openDefaultDestination()
+                startActivity(Intent(this@MainActivity, LoginActivity::class.java))
+                finish()
             }
         })
     }
@@ -76,7 +85,17 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         binding.navView.inflateMenu(menuRes)
     }
 
+    // יעד פתיחה כדי שלא יישאר מסך ריק
     private fun openDefaultDestination() {
+        if (currentRole == "supplier") {
+            startActivity(Intent(this, SupplierDashboardActivity::class.java))
+            binding.navView.setCheckedItem(R.id.nav_supplier_dashboard)
+        } else {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.nav_host_fragment_content_main, FavoritesFragment())
+                .commit()
+            binding.navView.setCheckedItem(R.id.nav_favorites)
+        }
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {

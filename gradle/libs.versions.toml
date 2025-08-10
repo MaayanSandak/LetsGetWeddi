@@ -11,7 +11,6 @@ material = "1.12.0"
 constraintlayout = "2.2.1"
 lifecycleLivedataKtx = "2.9.1"
 lifecycleViewmodelKtx = "2.9.1"
-materialVersion = "1.11.0"
 navigationFragmentKtx = "2.9.0"
 navigationUiKtx = "2.9.0"
 firebase-plugin = "4.4.1"
@@ -36,7 +35,6 @@ androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx" }
 firebase-database = { group = "com.google.firebase", name = "firebase-database-ktx" }
 firebase-storage = { group = "com.google.firebase", name = "firebase-storage-ktx" }
-material-v1110 = { module = "com.google.android.material:material", version.ref = "materialVersion" }
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 picasso = { module = "com.squareup.picasso:picasso", version.ref = "picasso" }
 kizitonwose-calendar = { module = "com.kizitonwose.calendar:view", version.ref = "kizitonwoseCalendar" }

@@ -1,12 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
+
     <group android:checkableBehavior="single">
+
         <item
             android:id="@+id/nav_home_page"
             android:icon="@drawable/home_page"
             android:title="@string/home_page" />
+
+
         <item
-            android:title="@string/suppliers"
-            android:icon="@drawable/suppliers">
+            android:id="@+id/nav_suppliers_root"
+            android:icon="@drawable/suppliers"
+            android:title="@string/suppliers">
             <menu>
                 <item
                     android:id="@+id/nav_djs"
@@ -21,37 +27,52 @@
                     android:icon="@drawable/photographers"
                     android:title="@string/category_photographers" />
                 <item
+                    android:id="@+id/nav_suits"
+                    android:icon="@drawable/suits"
+                    android:title="@string/category_suits" />
+                <item
                     android:id="@+id/nav_dresses"
                     android:icon="@drawable/dresses"
                     android:title="@string/category_dresses" />
                 <item
                     android:id="@+id/nav_hair_and_makeup"
                     android:icon="@drawable/hair"
-                    android:title="@string/category_hair_and_makeup" />
-
-                <item
-                    android:id="@+id/nav_suits"
-                    android:icon="@drawable/suits"
-                    android:title="@string/category_suits" />
-
-                <item
-                    android:id="@+id/nav_tips_and_checklist"
-                    android:icon="@drawable/checklist"
-                    android:title="@string/checklist_and_tips" />
+                    android:title="category_hair_makeup" />
             </menu>
         </item>
+
 
         <item
             android:id="@+id/nav_profile"
             android:icon="@drawable/profile"
             android:title="@string/profile" />
+
         <item
             android:id="@+id/nav_favorites"
             android:icon="@drawable/favorites"
             android:title="@string/favorites" />
+
+
+        <item
+            android:id="@+id/nav_supplier_dashboard"
+            android:icon="@drawable/home_page"
+            android:title="supplier_dashboard" />
+
+        <item
+            android:id="@+id/nav_supplier_gallery"
+            android:icon="@drawable/ic_menu_gallery"
+            android:title="supplier_gallery" />
+
+        <item
+            android:id="@+id/nav_supplier_availability"
+            android:icon="@drawable/ic_menu_camera"
+            android:title="supplier_availability" />
+
+
         <item
             android:id="@+id/nav_logout"
             android:icon="@drawable/logout"
             android:title="@string/logout" />
+
     </group>
 </menu>

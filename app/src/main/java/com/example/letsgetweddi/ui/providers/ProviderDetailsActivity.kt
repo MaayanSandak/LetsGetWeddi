@@ -11,6 +11,8 @@ import androidx.core.net.toUri
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.letsgetweddi.R
 import com.example.letsgetweddi.adapters.ReviewAdapter
+import com.example.letsgetweddi.data.DbPaths
+import com.example.letsgetweddi.data.FirebaseRefs
 import com.example.letsgetweddi.databinding.ActivityProviderDetailsBinding
 import com.example.letsgetweddi.model.Review
 import com.example.letsgetweddi.ui.chat.ChatActivity
@@ -21,7 +23,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.DayPosition
@@ -31,6 +32,7 @@ import com.kizitonwose.calendar.view.MonthDayBinder
 import com.kizitonwose.calendar.view.ViewContainer
 import com.squareup.picasso.Picasso
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -58,7 +60,7 @@ class ProviderDetailsActivity : AppCompatActivity() {
         DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.US)
     private var availableDates: Set<LocalDate> = emptySet()
 
-
+    // ---------- Calendar view container ----------
     private inner class DayViewContainer(view: View) : ViewContainer(view) {
         val text: TextView = view.findViewById(R.id.calendarDayText)
         val dot: View = view.findViewById(R.id.dot)
@@ -82,8 +84,7 @@ class ProviderDetailsActivity : AppCompatActivity() {
     }
 
     private fun loadSupplierDetails() {
-        val ref = FirebaseDatabase.getInstance().getReference("Suppliers").child(supplierId)
-        ref.get().addOnSuccessListener { snapshot ->
+        FirebaseRefs.ref(DbPaths.supplier(supplierId)).get().addOnSuccessListener { snapshot ->
             supplierName = snapshot.child("name").value?.toString() ?: ""
             supplierDescription = snapshot.child("description").value?.toString() ?: ""
             supplierLocation = snapshot.child("location").value?.toString() ?: ""
@@ -109,7 +110,7 @@ class ProviderDetailsActivity : AppCompatActivity() {
 
     private fun setupCalendarView() {
         val cv: CalendarView = binding.calendarAvailability
-        val currentMonth = java.time.YearMonth.now()
+        val currentMonth = YearMonth.now()
         val firstDayOfWeek = firstDayOfWeekFromLocale()
 
         cv.dayViewResource = R.layout.item_calendar_day
@@ -138,14 +139,8 @@ class ProviderDetailsActivity : AppCompatActivity() {
         cv.scrollToMonth(currentMonth)
     }
 
-
-
-
-
     private fun loadAvailability() {
-        val ref = FirebaseDatabase.getInstance()
-            .getReference("SuppliersAvailability")
-            .child(supplierId)
+        val ref = FirebaseRefs.availability(supplierId)
 
         binding.progressBar.visibility = View.VISIBLE
         ref.addListenerForSingleValueEvent(object : ValueEventListener {
@@ -156,11 +151,9 @@ class ProviderDetailsActivity : AppCompatActivity() {
                     try { list.add(LocalDate.parse(key, isoFormatter)) } catch (_: Exception) {}
                 }
                 availableDates = list.toSet()
-
                 binding.calendarAvailability.notifyCalendarChanged()
                 binding.progressBar.visibility = View.GONE
             }
-
             override fun onCancelled(error: DatabaseError) {
                 binding.progressBar.visibility = View.GONE
                 Toast.makeText(
@@ -187,8 +180,7 @@ class ProviderDetailsActivity : AppCompatActivity() {
 
         binding.buttonFavorite.setOnClickListener {
             val user = FirebaseAuth.getInstance().currentUser ?: return@setOnClickListener
-            val favRef = FirebaseDatabase.getInstance()
-                .getReference("favorites").child(user.uid).child(supplierId)
+            val favRef = FirebaseRefs.favorite(user.uid, supplierId)
 
             if (isFavorite) {
                 favRef.removeValue().addOnSuccessListener {
@@ -221,12 +213,10 @@ class ProviderDetailsActivity : AppCompatActivity() {
 
     private fun preloadFavoriteState() {
         val user = FirebaseAuth.getInstance().currentUser ?: return
-        FirebaseDatabase.getInstance()
-            .getReference("favorites").child(user.uid).child(supplierId)
-            .get().addOnSuccessListener { snapshot ->
-                isFavorite = snapshot.exists()
-                updateFavoriteButton()
-            }
+        FirebaseRefs.favorite(user.uid, supplierId).get().addOnSuccessListener { snapshot ->
+            isFavorite = snapshot.exists()
+            updateFavoriteButton()
+        }
     }
 
     private fun updateFavoriteButton() {
@@ -264,7 +254,7 @@ class ProviderDetailsActivity : AppCompatActivity() {
     }
 
     private fun loadReviews() {
-        reviewsRef = FirebaseDatabase.getInstance().getReference("reviews").child(supplierId)
+        reviewsRef = FirebaseRefs.reviews(supplierId)
         reviewAdapter = ReviewAdapter(reviewsList)
         binding.recyclerReviews.layoutManager = LinearLayoutManager(this)
         binding.recyclerReviews.adapter = reviewAdapter
@@ -287,10 +277,9 @@ class ProviderDetailsActivity : AppCompatActivity() {
             val user = FirebaseAuth.getInstance().currentUser
 
             if (user != null && rating > 0f) {
-                val userId = user.uid
                 val reviewId = reviewsRef.push().key ?: System.currentTimeMillis().toString()
                 val newReview = Review(
-                    userId = userId,
+                    userId = user.uid,
                     name = user.displayName ?: "Anonymous",
                     rating = rating,
                     comment = comment,

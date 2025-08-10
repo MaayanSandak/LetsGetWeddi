@@ -1,8 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/nav_home" android:title="Home" />
-    <item android:id="@+id/nav_supplier_dashboard" android:title="My dashboard" />
-    <item android:id="@+id/nav_supplier_gallery" android:title="Manage gallery" />
-    <item android:id="@+id/nav_supplier_availability" android:title="Manage availability" />
-    <item android:id="@+id/nav_chats" android:title="Chats" />
+
+    <group android:checkableBehavior="single">
+
+        <item
+            android:id="@+id/nav_home_page"
+            android:icon="@android:drawable/ic_menu_view"
+            android:title="Home" />
+
+        <item
+            android:id="@+id/nav_supplier_dashboard"
+            android:icon="@android:drawable/ic_menu_agenda"
+            android:title="Supplier Dashboard" />
+
+        <item
+            android:id="@+id/nav_supplier_gallery"
+            android:icon="@android:drawable/ic_menu_gallery"
+            android:title="Supplier Gallery" />
+
+        <item
+            android:id="@+id/nav_supplier_availability"
+            android:icon="@android:drawable/ic_menu_my_calendar"
+            android:title="Supplier Availability" />
+
+        <item
+            android:id="@+id/nav_favorites"
+            android:icon="@android:drawable/ic_menu_compass"
+            android:title="Favorites" />
+
+        <item
+            android:id="@+id/nav_profile"
+            android:icon="@android:drawable/ic_menu_myplaces"
+            android:title="Profile" />
+
+        <item
+            android:id="@+id/nav_logout"
+            android:icon="@android:drawable/ic_lock_power_off"
+            android:title="Logout" />
+    </group>
 </menu>

@@ -1,8 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/nav_home" android:title="Home" />
-    <item android:id="@+id/nav_all_suppliers" android:title="Suppliers" />
-    <item android:id="@+id/nav_favorites" android:title="Favorites" />
-    <item android:id="@+id/nav_tips" android:title="Tips" />
-    <item android:id="@+id/nav_checklist" android:title="Checklist" />
+
+    <group android:checkableBehavior="single">
+
+        <item
+            android:id="@+id/nav_home_page"
+            android:icon="@android:drawable/ic_menu_view"
+            android:title="Home" />
+
+        <item
+            android:id="@+id/nav_suppliers_root"
+            android:icon="@android:drawable/ic_menu_sort_by_size"
+            android:title="Suppliers">
+            <menu>
+                <item
+                    android:id="@+id/nav_djs"
+                    android:icon="@android:drawable/ic_menu_slideshow"
+                    android:title="DJs" />
+                <item
+                    android:id="@+id/nav_halls"
+                    android:icon="@android:drawable/ic_menu_slideshow"
+                    android:title="Halls" />
+                <item
+                    android:id="@+id/nav_photographers"
+                    android:icon="@android:drawable/ic_menu_slideshow"
+                    android:title="Photographers" />
+                <item
+                    android:id="@+id/nav_suits"
+                    android:icon="@android:drawable/ic_menu_slideshow"
+                    android:title="Suits" />
+                <item
+                    android:id="@+id/nav_dresses"
+                    android:icon="@android:drawable/ic_menu_slideshow"
+                    android:title="Dresses" />
+                <item
+                    android:id="@+id/nav_hair_and_makeup"
+                    android:icon="@android:drawable/ic_menu_slideshow"
+                    android:title="Hair and Makeup" />
+            </menu>
+        </item>
+
+        <item
+            android:id="@+id/nav_favorites"
+            android:icon="@android:drawable/ic_menu_compass"
+            android:title="Favorites" />
+
+        <item
+            android:id="@+id/nav_profile"
+            android:icon="@android:drawable/ic_menu_myplaces"
+            android:title="Profile" />
+
+        <item
+            android:id="@+id/nav_logout"
+            android:icon="@android:drawable/ic_lock_power_off"
+            android:title="Logout" />
+    </group>
 </menu>
