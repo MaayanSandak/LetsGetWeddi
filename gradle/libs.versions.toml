@@ -1,0 +1,59 @@
+[versions]
+agp = "8.9.2"
+appcompatVersion = "1.7.0"
+firebaseBom = "33.16.0"
+firebaseBomVersion = "33.5.1"
+googlePlayServicesRecaptcha = "18.3.0"
+kotlin = "2.0.21"
+coreKtx = "1.16.0"
+junit = "4.13.2"
+junitVersion = "1.2.1"
+espressoCore = "3.6.1"
+appcompat = "1.7.1"
+material = "1.12.0"
+constraintlayout = "2.2.1"
+lifecycleLivedataKtx = "2.9.1"
+lifecycleViewmodelKtx = "2.9.1"
+navigationFragmentKtx = "2.9.0"
+navigationUiKtx = "2.9.0"
+firebase-plugin = "4.4.1"
+activity = "1.10.1"
+picasso = "2.8"
+kizitonwoseCalendar = "2.6.0"
+playServicesRecaptcha = "18.5.1"
+playServicesRecaptchaVersion = "18.4.0"
+
+
+[libraries]
+androidx-appcompat-v170 = { module = "androidx.appcompat:appcompat", version.ref = "appcompatVersion" }
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+google-firebase-auth = { module = "com.google.firebase:firebase-auth" }
+firebase-bom-v3351 = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBomVersion" }
+google-firebase-database = { module = "com.google.firebase:firebase-database" }
+google-firebase-storage = { module = "com.google.firebase:firebase-storage" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+androidx-lifecycle-livedata-ktx = { group = "androidx.lifecycle", name = "lifecycle-livedata-ktx", version.ref = "lifecycleLivedataKtx" }
+androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycleViewmodelKtx" }
+androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
+androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigationUiKtx" }
+firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx" }
+firebase-database = { group = "com.google.firebase", name = "firebase-database-ktx" }
+firebase-storage = { group = "com.google.firebase", name = "firebase-storage-ktx" }
+androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
+picasso = { module = "com.squareup.picasso:picasso", version.ref = "picasso" }
+kizitonwose-calendar = { module = "com.kizitonwose.calendar:view", version.ref = "kizitonwoseCalendar" }
+play-services-recaptcha = { module = "com.google.android.gms:play-services-recaptcha", version.ref = "playServicesRecaptcha" }
+play-services-recaptcha-v1830 = { module = "com.google.android.gms:play-services-recaptcha", version.ref = "googlePlayServicesRecaptcha" }
+play-services-recaptcha-v1840 = { module = "com.google.android.gms:play-services-recaptcha", version.ref = "playServicesRecaptchaVersion" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+firebase = { id = "com.google.gms.google-services", version.ref = "firebase-plugin" }
+

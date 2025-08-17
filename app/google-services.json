@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "1076027603921",
+    "firebase_url": "https://letsgetweddi-default-rtdb.firebaseio.com",
+    "project_id": "letsgetweddi",
+    "storage_bucket": "letsgetweddi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1076027603921:android:a4bfe8bfaeee81a754fef0",
+        "android_client_info": {
+          "package_name": "com.example.letsgetweddi"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1076027603921-iq52dps9rab3jkm15pfeklo7qbud6b1k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBqX3Ud6ZntZRvEcSAueRF5W3naok2OIfg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1076027603921-iq52dps9rab3jkm15pfeklo7qbud6b1k.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

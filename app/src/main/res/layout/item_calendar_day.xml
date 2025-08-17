@@ -1,0 +1,4 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="48dp" android:layout_height="48dp" android:layout_gravity="center">
+    <TextView android:id="@+id/calendarDayText" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:textSize="14sp"/>
+    <View android:id="@+id/dot" android:layout_width="6dp" android:layout_height="6dp" android:layout_gravity="center_horizontal|bottom" android:layout_marginBottom="6dp" android:visibility="gone"/>
+</FrameLayout>

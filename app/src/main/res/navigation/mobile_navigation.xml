@@ -1,0 +1,8 @@
+<navigation xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:tools="http://schemas.android.com/tools" android:id="@+id/mobile_navigation" app:startDestination="@+id/nav_home">
+    <fragment android:id="@+id/nav_home" android:name="com.example.letsgetweddi.ui.home.HomeFragment" android:label="@string/menu_home" tools:layout="@layout/fragment_home"/>
+    <fragment android:id="@+id/nav_gallery" android:name="com.example.letsgetweddi.ui.gallery.GalleryFragment" android:label="@string/menu_gallery" tools:layout="@layout/fragment_gallery"/>
+    <fragment android:id="@+id/nav_slideshow" android:name="com.example.letsgetweddi.ui.categories.SuppliersListFragment" android:label="@string/menu_slideshow" tools:layout="@layout/fragment_tips_and_checklist"/>
+    <fragment android:id="@+id/nav_supplier_calendar" android:name="com.example.letsgetweddi.ui.supplier.SupplierCalendarFragment" android:label="Supplier Calendar" tools:layout="@layout/fragment_supplier_calendar"/>
+    <fragment android:id="@+id/nav_edit_supplier" android:name="com.example.letsgetweddi.ui.supplier.EditSupplierFragment" android:label="Edit Supplier" tools:layout="@layout/fragment_edit_supplier"/>
+    <fragment android:id="@+id/nav_all_suppliers" android:name="com.example.letsgetweddi.ui.providers.AllSuppliersFragment" android:label="All Suppliers" tools:layout="@layout/fragment_all_suppliers"/>
+</navigation>
