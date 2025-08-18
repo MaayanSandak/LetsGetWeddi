@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/menu_home"
+        android:title="@string/home_page" />
+
+    <item
+        android:id="@+id/menu_profile"
+        android:title="@string/profile" />
+
+    <!-- Header with custom action view (single source of truth) -->
+    <item
+        android:id="@+id/menu_suppliers_header"
+        android:title="@string/suppliers"
+        android:checkable="false"
+        android:enabled="true"
+        app:actionLayout="@layout/item_menu_header_toggle" />
+
+    <!-- Children group that we show/hide -->
+    <group android:id="@+id/group_suppliers_children">
+        <item android:id="@+id/menu_suppliers_all"           android:title="@string/suppliers_all" />
+        <item android:id="@+id/menu_suppliers_djs"           android:title="@string/category_djs" />
+        <item android:id="@+id/menu_suppliers_photographers" android:title="@string/category_photographers" />
+        <item android:id="@+id/menu_suppliers_dresses"       android:title="@string/category_dresses" />
+        <item android:id="@+id/menu_suppliers_suits"         android:title="@string/category_suits" />
+        <item android:id="@+id/menu_suppliers_hair"          android:title="@string/category_hair_makeup" />
+        <item android:id="@+id/menu_suppliers_halls"         android:title="@string/category_halls" />
+    </group>
+
+    <item android:id="@+id/menu_favorites"             android:title="@string/favorites" />
+    <item android:id="@+id/menu_tips"                  android:title="@string/menu_tips_checklist" />
+    <item android:id="@+id/menu_chat"                  android:title="@string/menu_messages" />
+    <item android:id="@+id/menu_supplier_gallery"      android:title="@string/supplier_gallery_manage" android:visible="false" />
+    <item android:id="@+id/menu_supplier_availability" android:title="@string/supplier_availability"  android:visible="false" />
+    <item android:id="@+id/menu_logout"                android:title="@string/logout" />
+</menu>

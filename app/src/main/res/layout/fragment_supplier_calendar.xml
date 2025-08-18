@@ -1,7 +1,42 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="12dp">
-    <CalendarView android:id="@+id/calendarView" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-    <ProgressBar android:id="@+id/progressBar" android:layout_width="48dp" android:layout_height="48dp" android:layout_gravity="center_horizontal" android:layout_marginTop="12dp" android:visibility="gone"/>
-    <Button android:id="@+id/btnClearAll" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Clear All" android:layout_marginTop="8dp"/>
-    <TextView android:id="@+id/textEmpty" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="No available dates" android:layout_gravity="center_horizontal" android:layout_marginTop="8dp" android:visibility="gone"/>
-    <androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerDates" android:layout_width="match_parent" android:layout_height="0dp" android:layout_marginTop="8dp" android:layout_weight="1"/>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <CalendarView
+        android:id="@+id/calendarView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/btnClearAll"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Clear All" />
+
+    <TextView
+        android:id="@+id/textEmpty"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="8dp"
+        android:text="No available dates"
+        android:visibility="gone" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerDates"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_weight="1" />
 </LinearLayout>

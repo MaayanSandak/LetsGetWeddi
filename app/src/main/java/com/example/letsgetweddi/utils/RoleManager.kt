@@ -2,6 +2,7 @@ package com.example.letsgetweddi.utils
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.example.letsgetweddi.data.DbPaths
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 
@@ -23,9 +24,9 @@ object RoleManager {
     fun load(context: Context, onResult: (role: String?, supplierId: String?) -> Unit) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         if (uid == null) { onResult(null, null); return }
-        FirebaseDatabase.getInstance().getReference("users").child(uid).get()
+        FirebaseDatabase.getInstance().getReference(DbPaths.user(uid)).get()
             .addOnSuccessListener { s ->
-                val role = s.child("clientType").getValue(String::class.java) ?: "client"
+                val role = s.child("role").getValue(String::class.java) ?: "client"
                 val supplierId = s.child("supplierId").getValue(String::class.java)
                 cache(context, role, supplierId)
                 onResult(role, supplierId)
@@ -36,7 +37,10 @@ object RoleManager {
     fun isSupplier(context: Context, onResult: (Boolean, String?) -> Unit) {
         val cached = getCachedRole(context)
         val sid = getCachedSupplierId(context)
-        if (cached != null) { onResult(cached == "supplier", sid); return }
+        if (cached != null) {
+            onResult(cached == "supplier", sid)
+            return
+        }
         load(context) { role, supplierId -> onResult(role == "supplier", supplierId) }
     }
 

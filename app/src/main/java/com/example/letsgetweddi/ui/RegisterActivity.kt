@@ -20,7 +20,8 @@ class RegisterActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
 
-        val btnGoLogin = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnGoLogin)
+        val btnGoLogin =
+            findViewById<com.google.android.material.button.MaterialButton>(R.id.btnGoLogin)
         btnGoLogin.setOnClickListener {
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
@@ -67,11 +68,19 @@ class RegisterActivity : AppCompatActivity() {
                             finish()
                         }
                         .addOnFailureListener {
-                            Toast.makeText(this, it.localizedMessage ?: "Failed to save user", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                this,
+                                it.localizedMessage ?: "Failed to save user",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                 }
                 .addOnFailureListener {
-                    Toast.makeText(this, it.localizedMessage ?: "Register failed", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this,
+                        it.localizedMessage ?: "Register failed",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
         }
     }

@@ -16,7 +16,11 @@ import com.example.letsgetweddi.databinding.FragmentTipsAndChecklistBinding
 import com.example.letsgetweddi.model.ChecklistItem
 import com.example.letsgetweddi.model.Tip
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 class TipsAndChecklistFragment : Fragment() {
 
@@ -32,7 +36,6 @@ class TipsAndChecklistFragment : Fragment() {
     private val allTips = mutableListOf<Tip>()
     private val filteredTips = mutableListOf<Tip>()
 
-    private var userRole: String = "client"
     private lateinit var uid: String
 
     private val defaultChecklist = listOf(
@@ -48,7 +51,11 @@ class TipsAndChecklistFragment : Fragment() {
         "Send invitations"
     )
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         binding = FragmentTipsAndChecklistBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -66,17 +73,7 @@ class TipsAndChecklistFragment : Fragment() {
         binding.recyclerChecklist.adapter = checklistAdapter
         binding.recyclerTips.adapter = tipAdapter
 
-        // load role (for gating if you want)
-        database.child("Users").child(uid).child("role")
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    userRole = snapshot.getValue(String::class.java) ?: "client"
-                    applyGating()
-                }
-                override fun onCancelled(error: DatabaseError) {}
-            })
-
-        // checklist live (seed defaults once if empty)
+        // Seed defaults once if empty
         val checklistRef = database.child("checklist").child(uid)
         checklistRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -84,27 +81,36 @@ class TipsAndChecklistFragment : Fragment() {
                     val updates = HashMap<String, Any?>()
                     defaultChecklist.forEach { taskText ->
                         val id = checklistRef.push().key ?: return@forEach
-                        updates[id] = ChecklistItem(id = id, task = taskText, isDone = false)
+                        // Ensure field name is "isDone" in DB
+                        updates[id] = mapOf(
+                            "id" to id,
+                            "task" to taskText,
+                            "isDone" to false
+                        )
                     }
-                    checklistRef.updateChildren(updates)
+                    if (updates.isNotEmpty()) checklistRef.updateChildren(updates)
                 }
             }
+
             override fun onCancelled(error: DatabaseError) {}
         })
+
+        // Live list
         checklistRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 allChecklistItems.clear()
                 for (c in snapshot.children) {
-                    val item = c.getValue(ChecklistItem::class.java)
-                    val id = c.key
-                    if (item != null && id != null) allChecklistItems.add(item.copy(id = id))
+                    val item = ChecklistItem.fromSnapshot(c)
+                    // If someone wrote "done" instead of "isDone", fromSnapshot already handles it
+                    if (item.id != null) allChecklistItems.add(item)
                 }
                 filterChecklist(binding.searchViewChecklist.query?.toString().orEmpty())
             }
+
             override fun onCancelled(error: DatabaseError) {}
         })
 
-        // tips per user (live)
+        // Tips per user (live)
         val tipsRef = database.child("tips").child(uid)
         tipsRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -115,6 +121,7 @@ class TipsAndChecklistFragment : Fragment() {
                 }
                 filterTips(binding.searchViewTips.query?.toString().orEmpty())
             }
+
             override fun onCancelled(error: DatabaseError) {}
         })
 
@@ -126,8 +133,13 @@ class TipsAndChecklistFragment : Fragment() {
                 .setPositiveButton("Add") { _, _ ->
                     val taskText = input.text.toString().trim()
                     if (taskText.isNotEmpty()) {
-                        val id = database.child("checklist").child(uid).push().key ?: return@setPositiveButton
-                        val newTask = ChecklistItem(id = id, task = taskText, isDone = false)
+                        val id = database.child("checklist").child(uid).push().key
+                            ?: return@setPositiveButton
+                        val newTask = mapOf(
+                            "id" to id,
+                            "task" to taskText,
+                            "isDone" to false
+                        )
                         database.child("checklist").child(uid).child(id).setValue(newTask)
                     }
                 }
@@ -152,7 +164,8 @@ class TipsAndChecklistFragment : Fragment() {
                     val title = titleEt.text.toString().trim()
                     val content = contentEt.text.toString().trim()
                     if (title.isNotEmpty() && content.isNotEmpty()) {
-                        val id = database.child("tips").child(uid).push().key ?: return@setPositiveButton
+                        val id =
+                            database.child("tips").child(uid).push().key ?: return@setPositiveButton
                         val newTip = Tip(title = title, content = content)
                         database.child("tips").child(uid).child(id).setValue(newTip)
                     }
@@ -163,23 +176,22 @@ class TipsAndChecklistFragment : Fragment() {
 
         binding.searchViewChecklist.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?) = true
-            override fun onQueryTextChange(newText: String?) = true.also { filterChecklist(newText.orEmpty()) }
+            override fun onQueryTextChange(newText: String?) =
+                true.also { filterChecklist(newText.orEmpty()) }
         })
         binding.searchViewTips.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?) = true
-            override fun onQueryTextChange(newText: String?) = true.also { filterTips(newText.orEmpty()) }
+            override fun onQueryTextChange(newText: String?) =
+                true.also { filterTips(newText.orEmpty()) }
         })
-    }
-
-    private fun applyGating() {
-        // If you want supplier-only tip creation, switch to: View.VISIBLE only for suppliers.
-        binding.buttonAddTip.visibility = View.VISIBLE
     }
 
     private fun filterChecklist(query: String) {
         val q = query.lowercase()
         filteredChecklistItems.clear()
-        filteredChecklistItems.addAll(allChecklistItems.filter { it.task?.lowercase()?.contains(q) == true })
+        filteredChecklistItems.addAll(allChecklistItems.filter {
+            it.task?.lowercase()?.contains(q) == true
+        })
         checklistAdapter.notifyDataSetChanged()
     }
 
@@ -187,7 +199,8 @@ class TipsAndChecklistFragment : Fragment() {
         val q = query.lowercase()
         filteredTips.clear()
         filteredTips.addAll(allTips.filter {
-            it.title?.lowercase()?.contains(q) == true || it.content?.lowercase()?.contains(q) == true
+            it.title?.lowercase()?.contains(q) == true || it.content?.lowercase()
+                ?.contains(q) == true
         })
         tipAdapter.notifyDataSetChanged()
     }

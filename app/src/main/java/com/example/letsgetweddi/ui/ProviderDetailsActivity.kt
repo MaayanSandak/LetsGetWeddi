@@ -10,7 +10,11 @@ import com.example.letsgetweddi.databinding.ActivityProviderDetailsBinding
 import com.example.letsgetweddi.model.Supplier
 import com.example.letsgetweddi.utils.RoleManager
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 class ProviderDetailsActivity : AppCompatActivity() {
 
@@ -46,7 +50,9 @@ class ProviderDetailsActivity : AppCompatActivity() {
                 )
                 render()
             }
-            override fun onCancelled(error: DatabaseError) { /* no-op */ }
+
+            override fun onCancelled(error: DatabaseError) { /* no-op */
+            }
         })
     }
 
@@ -79,7 +85,7 @@ class ProviderDetailsActivity : AppCompatActivity() {
     private fun bindActions() {
         binding.buttonWhatsApp.setOnClickListener {
             val phone = supplier?.phone ?: return@setOnClickListener
-            val uri = Uri.parse("https://wa.me/${phone.replace("+","")}")
+            val uri = Uri.parse("https://wa.me/${phone.replace("+", "")}")
             startActivity(Intent(Intent.ACTION_VIEW, uri))
         }
         binding.buttonChat.setOnClickListener {
@@ -98,11 +104,14 @@ class ProviderDetailsActivity : AppCompatActivity() {
         }
         binding.buttonManageAvailability.setOnClickListener {
             startActivity(
-                Intent(this, com.example.letsgetweddi.ui.supplier.SupplierCalendarActivity::class.java)
+                Intent(
+                    this,
+                    com.example.letsgetweddi.ui.supplier.SupplierCalendarActivity::class.java
+                )
                     .putExtra("supplierId", supplierId)
             )
         }
-             binding.buttonEdit.setOnClickListener {
+        binding.buttonEdit.setOnClickListener {
             startActivity(
                 Intent(this, com.example.letsgetweddi.ui.supplier.SupplierEditActivity::class.java)
                     .putExtra("supplierId", supplierId)

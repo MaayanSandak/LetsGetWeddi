@@ -1,21 +1,128 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/rootLogin" android:layout_width="match_parent" android:layout_height="match_parent">
-    <androidx.core.widget.NestedScrollView android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true" android:clipToPadding="false" android:padding="24dp">
-        <androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent" android:layout_height="wrap_content">
-            <LinearLayout android:id="@+id/contentContainer" android:layout_width="0dp" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center_horizontal" android:paddingStart="16dp" android:paddingEnd="16dp" app:layout_constrainedWidth="true" app:layout_constraintWidth_max="480dp" app:layout_constraintLeft_toLeftOf="parent" app:layout_constraintRight_toRightOf="parent" app:layout_constraintTop_toTopOf="parent">
-                <TextView android:id="@+id/loginTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/letsgetweddi" android:textAppearance="?attr/textAppearanceHeadlineSmall" android:gravity="center" android:paddingBottom="16dp"/>
-                <com.google.android.material.button.MaterialButtonToggleGroup android:id="@+id/toggleRole" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp" app:singleSelection="true" app:selectionRequired="true" app:checkedButton="@id/btnClient">
-                    <com.google.android.material.button.MaterialButton android:id="@+id/btnClient" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="0dp" android:layout_height="wrap_content" android:minHeight="48dp" android:layout_weight="1" android:text="@string/client" android:checkable="true"/>
-                    <com.google.android.material.button.MaterialButton android:id="@+id/btnSupplier" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="0dp" android:layout_height="wrap_content" android:minHeight="48dp" android:layout_weight="1" android:text="@string/supplier" android:checkable="true"/>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/rootLogin"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:padding="24dp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:id="@+id/contentContainer"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                app:layout_constrainedWidth="true"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintWidth_max="480dp">
+
+                <TextView
+                    android:id="@+id/loginTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:paddingBottom="16dp"
+                    android:text="@string/letsgetweddi"
+                    android:textAppearance="?attr/textAppearanceHeadlineSmall" />
+
+                <com.google.android.material.button.MaterialButtonToggleGroup
+                    android:id="@+id/toggleRole"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:checkedButton="@id/btnClient"
+                    app:selectionRequired="true"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnClient"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:checkable="true"
+                        android:minHeight="48dp"
+                        android:text="@string/client" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSupplier"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:checkable="true"
+                        android:minHeight="48dp"
+                        android:text="@string/supplier" />
                 </com.google.android.material.button.MaterialButtonToggleGroup>
-                <com.google.android.material.textfield.TextInputLayout style="@style/Widget.Material3.TextInputLayout.OutlinedBox" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/email_hint">
-                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/editTextEmail" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:inputType="textEmailAddress"/>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/email_hint">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/editTextEmail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textEmailAddress"
+                        android:minHeight="48dp" />
                 </com.google.android.material.textfield.TextInputLayout>
-                <com.google.android.material.textfield.TextInputLayout style="@style/Widget.Material3.TextInputLayout.OutlinedBox" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:hint="@string/password_hint">
-                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/editTextPassword" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:inputType="textPassword"/>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:hint="@string/password_hint">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/editTextPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPassword"
+                        android:minHeight="48dp" />
                 </com.google.android.material.textfield.TextInputLayout>
-                <com.google.android.material.progressindicator.CircularProgressIndicator android:id="@+id/progress" android:layout_width="32dp" android:layout_height="32dp" android:layout_gravity="center_horizontal" android:layout_marginTop="16dp" android:visibility="gone"/>
-                <com.google.android.material.button.MaterialButton android:id="@+id/buttonLogin" style="@style/Widget.Material3.Button.FilledButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:layout_marginTop="16dp" android:text="@string/login_button"/>
-                <com.google.android.material.button.MaterialButton android:id="@+id/buttonRegister" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:layout_marginTop="8dp" android:layout_marginBottom="8dp" android:text="@string/register_button"/>
+
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/progress"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="16dp"
+                    android:visibility="gone" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonLogin"
+                    style="@style/Widget.Material3.Button.FilledButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:minHeight="48dp"
+                    android:text="@string/login_button" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonRegister"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:minHeight="48dp"
+                    android:text="@string/register_button" />
             </LinearLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.core.widget.NestedScrollView>

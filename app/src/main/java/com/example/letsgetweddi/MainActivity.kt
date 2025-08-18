@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import com.example.letsgetweddi.databinding.ActivityMainBinding
@@ -13,12 +15,18 @@ import com.example.letsgetweddi.ui.LoginActivity
 import com.example.letsgetweddi.ui.categories.SuppliersListFragment
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     private lateinit var binding: ActivityMainBinding
+
     private var role: String = "client"
     private var supplierId: String? = null
+    private var suppliersExpanded = false
+
+    private val auth by lazy { FirebaseAuth.getInstance() }
+    private val db by lazy { FirebaseDatabase.getInstance() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,64 +34,195 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
 
+        suppliersExpanded = savedInstanceState?.getBoolean(STATE_SUPPLIERS_EXPANDED, false) ?: false
+
         val toggle = ActionBarDrawerToggle(
-            this,
-            binding.drawerLayout,
-            binding.toolbar,
-            R.string.app_name,
-            R.string.app_name
+            this, binding.drawerLayout, binding.toolbar,
+            R.string.app_name, R.string.app_name
         )
         binding.drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
+
         binding.navView.setNavigationItemSelectedListener(this)
 
-        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        // Wire header action view after menu is available
+        wireSuppliersHeaderAction()
+
+        // Apply initial visibility
+        applySuppliersExpandedUI()
+
+        val uid = auth.currentUser?.uid
         if (uid == null) {
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
             return
         }
 
-        // Build drawer immediately (default client). If you later cache role – it will rebuild.
-        buildMenuForRole(role)
-        openStartForRole(role)
+        applyRoleUI("client")
+        verifyRoleAndRebuild(uid)
+        openHome()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putBoolean(STATE_SUPPLIERS_EXPANDED, suppliersExpanded)
+        super.onSaveInstanceState(outState)
+    }
+
+    private fun verifyRoleAndRebuild(uid: String) {
+        db.getReference("Users").child(uid).get().addOnSuccessListener { snap ->
+            val dbRole = snap.child("role").getValue(String::class.java).orEmpty()
+            val dbSupplierId = snap.child("supplierId").getValue(String::class.java)
+
+            if (dbRole == "supplier" && !dbSupplierId.isNullOrBlank()) {
+                db.getReference("Suppliers").child(dbSupplierId).get().addOnSuccessListener { s2 ->
+                    if (s2.exists()) {
+                        role = "supplier"; supplierId = dbSupplierId
+                    } else {
+                        role = "client"; supplierId = null
+                    }
+                    applyRoleUI(role); applySuppliersExpandedUI(); renderHeaderArrow()
+                }
+            } else {
+                role = "client"; supplierId = null
+                applyRoleUI(role); applySuppliersExpandedUI(); renderHeaderArrow()
+            }
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean = super.onCreateOptionsMenu(menu)
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         val handled = when (item.itemId) {
-            ID_MENU_HOME -> { openHome(); true }
-            ID_MENU_PROFILE -> { openIfExists("com.example.letsgetweddi.ui.ProfileFragment", "profile"); true }
-
-            ID_MENU_SUPPLIERS_ALL -> { openAllSuppliers(); true }
-            ID_MENU_SUPPLIERS_DJS -> { openSuppliers(Category.DJS); true }
-            ID_MENU_SUPPLIERS_PHOTOGRAPHERS -> { openSuppliers(Category.PHOTOGRAPHERS); true }
-            ID_MENU_SUPPLIERS_DRESSES -> { openSuppliers(Category.DRESSES); true }
-            ID_MENU_SUPPLIERS_SUITS -> { openSuppliers(Category.SUITS); true }
-            ID_MENU_SUPPLIERS_HAIR -> { openSuppliers(Category.HAIR_MAKEUP); true }
-            ID_MENU_SUPPLIERS_HALLS -> { openSuppliers(Category.HALLS); true }
-
-            ID_MENU_FAVORITES -> { openIfExists("com.example.letsgetweddi.ui.favorites.FavoritesFragment", "favorites"); true }
-            ID_MENU_TIPS -> { openIfExists("com.example.letsgetweddi.ui.categories.TipsAndChecklistFragment", "tips_checklist"); true }
-            ID_MENU_CHAT -> { startIfExists("com.example.letsgetweddi.ui.chat.ConversationsActivity") }
-            ID_MENU_SUPPLIER_GALLERY -> { startIfExists("com.example.letsgetweddi.ui.gallery.GalleryManageActivity") }
-            ID_MENU_SUPPLIER_AVAILABILITY -> { startIfExists("com.example.letsgetweddi.ui.supplier.SupplierCalendarActivity") }
-
-            ID_MENU_LOGOUT -> {
-                FirebaseAuth.getInstance().signOut()
-                startActivity(Intent(this, LoginActivity::class.java))
-                finish()
-                true
+            // Children handled normally (we keep drawer open until user selects)
+            R.id.menu_home -> {
+                openHome(); true
             }
+
+            R.id.menu_profile -> {
+                openIfExists(
+                    "com.example.letsgetweddi.ui.ProfileFragment",
+                    "profile",
+                    getString(R.string.profile)
+                ); true
+            }
+
+            R.id.menu_suppliers_all -> {
+                openAllSuppliers(); true
+            }
+
+            R.id.menu_suppliers_djs -> {
+                openSuppliers(Category.DJS); true
+            }
+
+            R.id.menu_suppliers_photographers -> {
+                openSuppliers(Category.PHOTOGRAPHERS); true
+            }
+
+            R.id.menu_suppliers_dresses -> {
+                openSuppliers(Category.DRESSES); true
+            }
+
+            R.id.menu_suppliers_suits -> {
+                openSuppliers(Category.SUITS); true
+            }
+
+            R.id.menu_suppliers_hair -> {
+                openSuppliers(Category.HAIR_MAKEUP); true
+            }
+
+            R.id.menu_suppliers_halls -> {
+                openSuppliers(Category.HALLS); true
+            }
+
+            R.id.menu_favorites -> {
+                openIfExists(
+                    "com.example.letsgetweddi.ui.favorites.FavoritesFragment",
+                    "favorites",
+                    getString(R.string.favorites)
+                ); true
+            }
+
+            R.id.menu_tips -> {
+                openIfExists(
+                    "com.example.letsgetweddi.ui.categories.TipsAndChecklistFragment",
+                    "tips_checklist",
+                    getString(R.string.menu_tips_checklist)
+                ); true
+            }
+
+            R.id.menu_chat -> {
+                startIfExists("com.example.letsgetweddi.ui.chat.ConversationsActivity")
+            }
+
+            R.id.menu_supplier_gallery -> {
+                startIfExists("com.example.letsgetweddi.ui.gallery.GalleryManageActivity")
+            }
+
+            R.id.menu_supplier_availability -> {
+                startIfExists("com.example.letsgetweddi.ui.supplier.SupplierCalendarActivity")
+            }
+
+            R.id.menu_logout -> {
+                auth.signOut(); startActivity(
+                    Intent(
+                        this,
+                        LoginActivity::class.java
+                    )
+                ); finish(); true
+            }
+
             else -> false
         }
-        binding.drawerLayout.closeDrawer(binding.navView)
+
+        // Close only for real navigation (selecting a child), not for header toggle (header handled in wireSuppliersHeaderAction)
+        if (handled) binding.drawerLayout.closeDrawer(binding.navView)
         return handled
     }
 
+    private fun wireSuppliersHeaderAction() {
+        val item = binding.navView.menu.findItem(R.id.menu_suppliers_header)
+        val row = item.actionView
+        val titleView = row?.findViewById<TextView>(R.id.headerTitle)
+        val arrowView = row?.findViewById<ImageView>(R.id.headerArrow)
+
+        row?.setOnClickListener {
+            suppliersExpanded = !suppliersExpanded
+            applySuppliersExpandedUI()
+            renderHeaderArrow()
+        }
+        // Initial arrow state
+        renderHeaderArrow()
+    }
+
+    private fun renderHeaderArrow() {
+        val row = binding.navView.menu.findItem(R.id.menu_suppliers_header).actionView
+        val arrowView = row?.findViewById<ImageView>(R.id.headerArrow)
+        arrowView?.rotation = if (suppliersExpanded) 180f else 0f
+    }
+
+    private fun applyRoleUI(r: String) {
+        val m = binding.navView.menu
+        val isSupplier = r == "supplier"
+        m.findItem(R.id.menu_favorites)?.isVisible = !isSupplier
+        m.findItem(R.id.menu_tips)?.isVisible = !isSupplier
+        m.findItem(R.id.menu_supplier_gallery)?.isVisible = isSupplier
+        m.findItem(R.id.menu_supplier_availability)?.isVisible = isSupplier
+    }
+
+    private fun applySuppliersExpandedUI() {
+        val m = binding.navView.menu
+        m.setGroupVisible(R.id.group_suppliers_children, suppliersExpanded)
+        binding.navView.invalidate()
+        binding.navView.requestLayout()
+    }
+
     private fun openHome() {
-        openIfExists("com.example.letsgetweddi.ui.home.HomeFragment", "home")
+        val ok = openIfExists(
+            className = "com.example.letsgetweddi.ui.home.HomeFragment",
+            tag = "home",
+            titleText = getString(R.string.home_page)
+        )
+        if (!ok) setContainerVisible(false)
     }
 
     private fun openAllSuppliers() {
@@ -104,14 +243,16 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         title = category.title
     }
 
-    private fun openIfExists(className: String, tag: String): Boolean {
+    private fun openIfExists(className: String, tag: String, titleText: String? = null): Boolean {
         return try {
             val fragClass = Class.forName(className)
-            val frag = supportFragmentManager.fragmentFactory.instantiate(classLoader, fragClass.name)
+            val frag =
+                supportFragmentManager.fragmentFactory.instantiate(classLoader, fragClass.name)
             supportFragmentManager.beginTransaction()
                 .replace(R.id.nav_host_fragment_content_main, frag, tag)
                 .commit()
             setContainerVisible(true)
+            if (!titleText.isNullOrEmpty()) title = titleText
             true
         } catch (_: Throwable) {
             setContainerVisible(false)
@@ -121,48 +262,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun startIfExists(className: String): Boolean {
         return try {
-            val c = Class.forName(className)
-            startActivity(Intent(this, c))
-            true
+            startActivity(Intent(this, Class.forName(className))); true
         } catch (_: Throwable) {
             false
-        }
-    }
-
-    private fun buildMenuForRole(r: String) {
-        val menu = binding.navView.menu
-        menu.clear()
-
-        menu.add(Menu.NONE, ID_MENU_HOME, Menu.NONE, getString(R.string.home_page))
-        menu.add(Menu.NONE, ID_MENU_PROFILE, Menu.NONE, getString(R.string.profile))
-
-        // ----- Suppliers header + items (always visible) -----
-        menu.add(Menu.NONE, ID_HEADER_SUPPLIERS, Menu.NONE, getString(R.string.suppliers)).apply {
-            isEnabled = false // acts as a non-clickable title row
-        }
-        menu.add(Menu.NONE, ID_MENU_SUPPLIERS_ALL, Menu.NONE, getString(R.string.suppliers_all))
-        menu.add(Menu.NONE, ID_MENU_SUPPLIERS_DJS, Menu.NONE, getString(R.string.category_djs))
-        menu.add(Menu.NONE, ID_MENU_SUPPLIERS_PHOTOGRAPHERS, Menu.NONE, getString(R.string.category_photographers))
-        menu.add(Menu.NONE, ID_MENU_SUPPLIERS_DRESSES, Menu.NONE, getString(R.string.category_dresses))
-        menu.add(Menu.NONE, ID_MENU_SUPPLIERS_SUITS, Menu.NONE, getString(R.string.category_suits))
-        menu.add(Menu.NONE, ID_MENU_SUPPLIERS_HAIR, Menu.NONE, getString(R.string.category_hair_makeup))
-        menu.add(Menu.NONE, ID_MENU_SUPPLIERS_HALLS, Menu.NONE, getString(R.string.category_halls))
-
-        if (r == "supplier") {
-            menu.add(Menu.NONE, ID_MENU_SUPPLIER_GALLERY, Menu.NONE, getString(R.string.supplier_gallery_manage))
-            menu.add(Menu.NONE, ID_MENU_SUPPLIER_AVAILABILITY, Menu.NONE, getString(R.string.supplier_availability))
-        } else {
-            menu.add(Menu.NONE, ID_MENU_FAVORITES, Menu.NONE, getString(R.string.favorites))
-            menu.add(Menu.NONE, ID_MENU_TIPS, Menu.NONE, getString(R.string.menu_tips_checklist))
-        }
-
-        menu.add(Menu.NONE, ID_MENU_CHAT, Menu.NONE, getString(R.string.menu_messages))
-        menu.add(Menu.NONE, ID_MENU_LOGOUT, Menu.NONE, getString(R.string.logout))
-    }
-
-    private fun openStartForRole(r: String) {
-        if (!openIfExists("com.example.letsgetweddi.ui.home.HomeFragment", "home")) {
-            setContainerVisible(false)
         }
     }
 
@@ -172,25 +274,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     companion object {
-        private const val ID_MENU_HOME = 10_000
-        private const val ID_MENU_PROFILE = 10_010
-
-        private const val ID_HEADER_SUPPLIERS = 10_015
-        private const val ID_MENU_SUPPLIERS_ALL = 10_020
-        private const val ID_MENU_SUPPLIERS_DJS = 10_021
-        private const val ID_MENU_SUPPLIERS_PHOTOGRAPHERS = 10_022
-        private const val ID_MENU_SUPPLIERS_DRESSES = 10_023
-        private const val ID_MENU_SUPPLIERS_SUITS = 10_024
-        private const val ID_MENU_SUPPLIERS_HAIR = 10_025
-        private const val ID_MENU_SUPPLIERS_HALLS = 10_026
-
-        private const val ID_MENU_FAVORITES = 10_030
-        private const val ID_MENU_TIPS = 10_040
-        private const val ID_MENU_CHAT = 10_050
-
-        private const val ID_MENU_SUPPLIER_GALLERY = 20_020
-        private const val ID_MENU_SUPPLIER_AVAILABILITY = 20_030
-
-        private const val ID_MENU_LOGOUT = 99_999
+        private const val STATE_SUPPLIERS_EXPANDED = "state_suppliers_expanded"
     }
 }

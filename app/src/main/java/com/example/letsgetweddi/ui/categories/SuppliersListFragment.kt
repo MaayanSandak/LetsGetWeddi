@@ -14,14 +14,16 @@ import com.example.letsgetweddi.data.DbPaths
 import com.example.letsgetweddi.databinding.FragmentSuppliersListBinding
 import com.example.letsgetweddi.model.Category
 import com.example.letsgetweddi.model.Supplier
-import com.google.firebase.database.*
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 class SuppliersListFragment : Fragment() {
 
     private var _binding: FragmentSuppliersListBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var database: DatabaseReference
     private lateinit var adapter: SupplierAdapter
     private lateinit var spinnerAdapter: ArrayAdapter<String>
 
@@ -35,83 +37,110 @@ class SuppliersListFragment : Fragment() {
         super.onCreate(savedInstanceState)
         val id = arguments?.getString(ARG_CATEGORY_ID).orEmpty()
         category = Category.fromId(id)
-        database = FirebaseDatabase.getInstance().getReference(DbPaths.SUPPLIERS)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         _binding = FragmentSuppliersListBinding.inflate(inflater, container, false)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        val cat = category ?: run {
-            showEmpty(true)
-            return
-        }
+        val cat = category ?: run { showEmpty(true); return }
 
-        binding.headerTitle.text = cat.title
-        binding.headerImage.setImageResource(cat.headerDrawable)
+        // Set screen title to the current category
+        requireActivity().title = cat.title
 
-        adapter = SupplierAdapter(filteredSuppliers)
+        adapter = SupplierAdapter(filteredSuppliers, isFavorites = false)
         binding.recycler.layoutManager = LinearLayoutManager(requireContext())
+        binding.recycler.setHasFixedSize(true)
         binding.recycler.adapter = adapter
 
-        spinnerAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, locationList)
+        spinnerAdapter =
+            ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, locationList)
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinnerLocation.adapter = spinnerAdapter
 
-        binding.spinnerLocation.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, v: View?, position: Int, id: Long) = filter()
-            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
-        }
+        binding.spinnerLocation.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?,
+                    v: View?,
+                    position: Int,
+                    id: Long
+                ) = filter()
 
-        binding.searchView.setOnQueryTextListener(object : androidx.appcompat.widget.SearchView.OnQueryTextListener {
+                override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+            }
+        binding.searchView.setOnQueryTextListener(object :
+            androidx.appcompat.widget.SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?) = true.also { filter() }
             override fun onQueryTextChange(newText: String?) = true.also { filter() }
         })
 
-        loadSuppliersForCategory(cat)
+        loadSuppliers(cat)
     }
 
-    private fun loadSuppliersForCategory(cat: Category) {
-        // Primary: query by category
-        database.orderByChild("category").equalTo(cat.id)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
+    private fun loadSuppliers(cat: Category) {
+        showEmpty(false)
+        val db = FirebaseDatabase.getInstance()
+        val refs = listOf(
+            db.getReference(DbPaths.SUPPLIERS), // "Suppliers"
+            db.getReference("suppliers")        // lowercase fallback
+        )
+
+        fun tryIndex(i: Int) {
+            if (i >= refs.size) {
+                bindFromSnapshot(null, cat); return
+            }
+            val ref = refs[i]
+            ref.addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.hasChildren()) {
-                        bindFromSnapshot(snapshot)
-                    } else {
-                        // Fallback: load all and filter locally (handles mismatched category keys)
-                        database.addListenerForSingleValueEvent(object : ValueEventListener {
-                            override fun onDataChange(allSnap: DataSnapshot) {
-                                bindFromSnapshot(allSnap, filterBy = cat.id)
-                            }
-                            override fun onCancelled(error: DatabaseError) { showEmpty(true) }
-                        })
-                    }
+                    if (snapshot.hasChildren()) bindFromSnapshot(snapshot, cat)
+                    else tryIndex(i + 1)
                 }
-                override fun onCancelled(error: DatabaseError) { showEmpty(true) }
+
+                override fun onCancelled(error: DatabaseError) {
+                    tryIndex(i + 1)
+                }
             })
+        }
+        tryIndex(0)
     }
 
-    private fun bindFromSnapshot(snapshot: DataSnapshot, filterBy: String? = null) {
+    private fun bindFromSnapshot(snapshot: DataSnapshot?, cat: Category) {
         allSuppliers.clear()
         locationList.clear()
         locationList.add("All locations")
 
-        for (child in snapshot.children) {
-            val raw = child.getValue(Supplier::class.java) ?: continue
-            val supplier = raw.copy(id = child.child("id").getValue(String::class.java) ?: child.key)
-            if (filterBy == null || supplier.category == filterBy) {
-                allSuppliers.add(supplier)
-                val loc = supplier.location.orEmpty()
-                if (loc.isNotBlank() && !locationList.contains(loc)) locationList.add(loc)
-            }
+        val nodes = snapshot?.children?.toList().orEmpty()
+        for (node in nodes) {
+            val s = Supplier.fromSnapshot(node)
+            if (s.id == null) continue
+            allSuppliers.add(s)
+            val loc = s.location.orEmpty()
+            if (loc.isNotBlank() && !locationList.contains(loc)) locationList.add(loc)
+        }
+
+        // Try category filter; if empty, show all so UI stays visible
+        val wantedId = cat.id.lowercase()
+        val wantedTitle = cat.title.lowercase()
+        val byCategory = allSuppliers.filter { s ->
+            val catField = s.category?.lowercase().orEmpty()
+            catField == wantedId || catField == wantedTitle
+        }
+        if (byCategory.isNotEmpty()) {
+            allSuppliers.clear()
+            allSuppliers.addAll(byCategory)
         }
 
         spinnerAdapter.notifyDataSetChanged()
         filter()
     }
+
 
     private fun filter() {
         val query = binding.searchView.query?.toString()?.lowercase()?.trim().orEmpty()
@@ -120,7 +149,7 @@ class SuppliersListFragment : Fragment() {
         filteredSuppliers.clear()
         filteredSuppliers.addAll(allSuppliers.filter { s ->
             val nameOk = s.name?.lowercase()?.contains(query) == true
-            val locOk = loc == "All locations" || s.location == loc
+            val locOk = (loc == "All locations") || (s.location == loc)
             nameOk && locOk
         })
 

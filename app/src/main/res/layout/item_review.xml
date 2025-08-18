@@ -1,4 +1,23 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:background="@drawable/rounded_card" android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="8dp">
-    <TextView android:id="@+id/textAuthor" style="@style/Weddi.Label" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/anonymous"/>
-    <TextView android:id="@+id/textContent" style="@style/Weddi.Body" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/great"/>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/rounded_card"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <TextView
+        android:id="@+id/textAuthor"
+        style="@style/Weddi.Label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/anonymous" />
+
+    <TextView
+        android:id="@+id/textContent"
+        style="@style/Weddi.Body"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="@string/great" />
 </LinearLayout>

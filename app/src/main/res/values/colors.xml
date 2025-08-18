@@ -23,4 +23,10 @@
     <color name="md_black_20">#33000000</color>
     <color name="md_white">#FFFFFFFF</color>
     <color name="black">#000000</color>
+    <color name="nav_header_gradient_start">#F8BBD0</color> <!-- Light pink -->
+    <color name="nav_header_gradient_end">#C2185B</color>   <!-- Dark pink -->
+    <color name="nav_header_title">#FFFFFFFF</color>
+    <color name="nav_header_subtitle">#B3FFFFFF</color>
+
+
 </resources>

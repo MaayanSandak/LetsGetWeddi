@@ -1,13 +1,96 @@
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true" android:padding="24dp">
-    <androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/registerLayout" android:layout_width="match_parent" android:layout_height="wrap_content">
-        <EditText android:id="@+id/editTextName" android:layout_width="0dp" android:layout_height="wrap_content" android:autofillHints="full_name" android:hint="@string/full_name" android:minHeight="48dp" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent"/>
-        <EditText android:id="@+id/editTextEmail" android:layout_width="0dp" android:layout_height="wrap_content" android:autofillHints="emailAddress" android:hint="@string/email" android:inputType="textEmailAddress" android:minHeight="48dp" app:layout_constraintTop_toBottomOf="@id/editTextName" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" android:layout_marginTop="16dp"/>
-        <EditText android:id="@+id/editTextPassword" android:layout_width="0dp" android:layout_height="wrap_content" android:hint="@string/password" android:inputType="textPassword" android:minHeight="48dp" app:layout_constraintTop_toBottomOf="@id/editTextEmail" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" android:layout_marginTop="16dp"/>
-        <RadioGroup android:id="@+id/roleGroup" android:layout_width="0dp" android:layout_height="wrap_content" android:orientation="horizontal" app:layout_constraintTop_toBottomOf="@id/editTextPassword" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" android:layout_marginTop="16dp">
-            <RadioButton android:id="@+id/radioClient" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/client"/>
-            <RadioButton android:id="@+id/radioSupplier" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/supplier" android:layout_marginStart="24dp"/>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:padding="24dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/registerLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <EditText
+            android:id="@+id/editTextName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:autofillHints="full_name"
+            android:hint="@string/full_name"
+            android:minHeight="48dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <EditText
+            android:id="@+id/editTextEmail"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:autofillHints="emailAddress"
+            android:hint="@string/email"
+            android:inputType="textEmailAddress"
+            android:minHeight="48dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/editTextName" />
+
+        <EditText
+            android:id="@+id/editTextPassword"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="@string/password"
+            android:inputType="textPassword"
+            android:minHeight="48dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/editTextEmail" />
+
+        <RadioGroup
+            android:id="@+id/roleGroup"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/editTextPassword">
+
+            <RadioButton
+                android:id="@+id/radioClient"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/client" />
+
+            <RadioButton
+                android:id="@+id/radioSupplier"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:text="@string/supplier" />
         </RadioGroup>
-        <Button android:id="@+id/buttonCreateAccount" android:layout_width="0dp" android:layout_height="wrap_content" android:text="@string/create_account" app:layout_constraintTop_toBottomOf="@id/roleGroup" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" android:layout_marginTop="24dp"/>
-        <com.google.android.material.button.MaterialButton android:id="@+id/btnGoLogin" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/already_have_an_account_log_in" android:textAllCaps="false" android:paddingStart="8dp" android:paddingEnd="8dp" app:layout_constraintTop_toBottomOf="@id/buttonCreateAccount" app:layout_constraintStart_toStartOf="parent" android:layout_marginTop="16dp"/>
+
+        <Button
+            android:id="@+id/buttonCreateAccount"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/create_account"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/roleGroup" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnGoLogin"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:text="@string/already_have_an_account_log_in"
+            android:textAllCaps="false"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/buttonCreateAccount" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.core.widget.NestedScrollView>

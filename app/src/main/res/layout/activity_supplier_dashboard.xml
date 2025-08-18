@@ -1,21 +1,87 @@
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
-        <ImageView android:id="@+id/imageSupplier" android:layout_width="match_parent" android:layout_height="180dp" android:scaleType="centerCrop" android:contentDescription="Supplier image"/>
-        <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Name">
-            <com.google.android.material.textfield.TextInputEditText android:id="@+id/editName" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <ImageView
+            android:id="@+id/imageSupplier"
+            android:layout_width="match_parent"
+            android:layout_height="180dp"
+            android:contentDescription="Supplier image"
+            android:scaleType="centerCrop" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Name">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
         </com.google.android.material.textfield.TextInputLayout>
-        <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Description">
-            <com.google.android.material.textfield.TextInputEditText android:id="@+id/editDescription" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Description">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
         </com.google.android.material.textfield.TextInputLayout>
-        <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Location">
-            <com.google.android.material.textfield.TextInputEditText android:id="@+id/editLocation" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Location">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editLocation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
         </com.google.android.material.textfield.TextInputLayout>
-        <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Phone">
-            <com.google.android.material.textfield.TextInputEditText android:id="@+id/editPhone" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="phone"/>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Phone">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editPhone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="phone" />
         </com.google.android.material.textfield.TextInputLayout>
-        <com.google.android.material.button.MaterialButton android:id="@+id/buttonSave" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Save details"/>
-        <com.google.android.material.button.MaterialButton android:id="@+id/buttonManageAvailability" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Manage availability"/>
-        <com.google.android.material.button.MaterialButton android:id="@+id/buttonManageGallery" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Manage gallery"/>
-        <com.google.android.material.button.MaterialButton android:id="@+id/buttonOpenChats" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Open chats"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonSave"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Save details" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonManageAvailability"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Manage availability" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonManageGallery"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Manage gallery" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonOpenChats"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Open chats" />
     </LinearLayout>
 </ScrollView>
