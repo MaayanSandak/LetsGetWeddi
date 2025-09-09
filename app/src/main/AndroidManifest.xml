@@ -20,25 +20,34 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+
                 <data
-                    android:scheme="letsgetweddi"
-                    android:host="availability" />
+                    android:host="availability"
+                    android:scheme="letsgetweddi" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".ui.gallery.GalleryViewActivity"
+            android:exported="false"
+            android:label="@string/gallery" />
 
         <activity
             android:name=".ui.gallery.GalleryManageActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+
                 <data
-                    android:scheme="letsgetweddi"
                     android:host="gallery"
-                    android:pathPrefix="/manage" />
+                    android:pathPrefix="/manage"
+                    android:scheme="letsgetweddi" />
             </intent-filter>
         </activity>
 

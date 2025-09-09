@@ -5,10 +5,10 @@ import android.text.TextUtils
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.letsgetweddi.data.ChatMessage
+import com.example.letsgetweddi.databinding.ActivityChatBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
-import com.example.letsgetweddi.databinding.ActivityChatBinding
-import com.example.letsgetweddi.data.ChatMessage
 
 class ChatActivity : AppCompatActivity() {
 
@@ -19,6 +19,7 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var myId: String
     private lateinit var otherId: String
     private var otherName: String? = null
+    private var myName: String? = null
 
     private lateinit var chatId: String
     private lateinit var adapter: ChatAdapter
@@ -47,20 +48,35 @@ class ChatActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         adapter = ChatAdapter(myId)
-        b.recycler.layoutManager = LinearLayoutManager(this).apply {
-            stackFromEnd = true
-        }
+        b.recycler.layoutManager = LinearLayoutManager(this).apply { stackFromEnd = true }
         b.recycler.adapter = adapter
 
-        b.btnSend.setOnClickListener {
-            val text = b.input.text?.toString()?.trim().orEmpty()
-            if (!TextUtils.isEmpty(text)) {
-                sendMessage(text)
-                b.input.setText("")
+        resolveMyDisplayName {
+            b.btnSend.setOnClickListener {
+                val text = b.input.text?.toString()?.trim().orEmpty()
+                if (!TextUtils.isEmpty(text)) {
+                    sendMessage(text)
+                    b.input.setText("")
+                }
             }
         }
 
         listenMessages()
+    }
+
+    private fun resolveMyDisplayName(onReady: () -> Unit) {
+        val ref = FirebaseDatabase.getInstance().getReference("Users").child(myId)
+        ref.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                myName = snapshot.child("name").getValue(String::class.java)
+                    ?: snapshot.child("email").getValue(String::class.java)
+                onReady()
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                onReady()
+            }
+        })
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -70,49 +86,52 @@ class ChatActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        msgsListener?.let { msgsRef?.removeEventListener(it) }
+        msgsListener?.let { l -> msgsRef?.removeEventListener(l) }
     }
 
     private fun listenMessages() {
-        msgsRef = db.child("chats").child(chatId).child("messages")
-        msgsListener = object : ValueEventListener {
+        val ref = db.child("chats").child(chatId).child("messages")
+        msgsRef = ref
+        msgsListener = ref.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val list = mutableListOf<ChatMessage>()
-                for (c in snapshot.children) {
-                    c.getValue(ChatMessage::class.java)?.let { list.add(it) }
+                for (s in snapshot.children) {
+                    val m = s.getValue(ChatMessage::class.java) ?: continue
+                    list.add(m)
                 }
-                list.sortBy { it.timestamp }
-                adapter.submitList(list)
-                b.recycler.scrollToPosition(list.lastIndex.coerceAtLeast(0))
+                adapter.submit(list)
+                b.recycler.scrollToPosition(list.size.coerceAtLeast(1) - 1)
                 markSeenIfNeeded(list)
             }
+
             override fun onCancelled(error: DatabaseError) {}
-        }
-        msgsRef?.addValueEventListener(msgsListener as ValueEventListener)
+        })
     }
 
     private fun sendMessage(text: String) {
         val msgKey = db.child("chats").child(chatId).child("messages").push().key ?: return
         val msg = ChatMessage(
             id = msgKey,
-            chatId = chatId,
             senderId = myId,
             receiverId = otherId,
             text = text,
             timestamp = System.currentTimeMillis(),
             seen = false
         )
+
         val updates = hashMapOf<String, Any>(
             "chats/$chatId/messages/$msgKey" to msg,
             "inbox/$myId/$chatId" to mapOf(
                 "chatId" to chatId,
                 "otherUserId" to otherId,
+                "otherUserName" to (otherName ?: ""),
                 "lastText" to text,
                 "lastTs" to ServerValue.TIMESTAMP
             ),
             "inbox/$otherId/$chatId" to mapOf(
                 "chatId" to chatId,
                 "otherUserId" to myId,
+                "otherUserName" to (myName ?: ""),
                 "lastText" to text,
                 "lastTs" to ServerValue.TIMESTAMP
             )
@@ -124,10 +143,7 @@ class ChatActivity : AppCompatActivity() {
         val notSeen = list.filter { it.receiverId == myId && !it.seen }
         if (notSeen.isEmpty()) return
         val updates = hashMapOf<String, Any>()
-        notSeen.forEach {
-            updates["chats/$chatId/messages/${it.id}/seen"] = true
-        }
+        notSeen.forEach { updates["chats/$chatId/messages/${it.id}/seen"] = true }
         db.updateChildren(updates)
     }
 }
-

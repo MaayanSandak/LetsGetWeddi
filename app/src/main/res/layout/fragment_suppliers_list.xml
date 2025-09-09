@@ -5,36 +5,30 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- Search -->
-    <androidx.appcompat.widget.SearchView
-        android:id="@+id/searchView"
-        android:layout_width="match_parent"
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:queryHint="Search supplier by name" />
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:visibility="gone" />
 
-    <!-- Location filter -->
-    <Spinner
-        android:id="@+id/spinnerLocation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp" />
-
-    <!-- Empty state -->
     <TextView
-        android:id="@+id/emptyView"
+        android:id="@+id/textEmpty"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:gravity="center"
         android:padding="16dp"
-        android:text="No suppliers found"
+        android:text="@string/no_suppliers_found"
         android:visibility="gone" />
 
-    <!-- List -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:contentDescription="@string/list_of_suppliers" />
 </LinearLayout>

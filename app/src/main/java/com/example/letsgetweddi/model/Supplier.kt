@@ -9,25 +9,22 @@ data class Supplier(
     val location: String? = null,
     val imageUrl: String? = null,
     val phone: String? = null,
-    val category: String? = null
+    val category: String? = null,
+    val categoryId: String? = null,
+    val categories: List<String>? = null,
+    val images: List<String>? = null
 ) {
     companion object {
         fun fromSnapshot(s: DataSnapshot): Supplier {
-            val id = s.child("id").getValue(String::class.java) ?: s.key
+            val rawId = s.child("id").getValue(String::class.java)
+            val id = if (rawId.isNullOrBlank()) s.key else rawId
 
-            val name = firstNonNullString(
-                s, listOf("name", "title", "supplierName", "fullName")
-            )
+            val name = firstNonNullString(s, listOf("name", "title", "supplierName", "fullName"))
+            val description = firstNonNullString(s, listOf("description", "details", "about"))
 
-            val description = firstNonNullString(
-                s, listOf("description", "details", "about")
-            )
-
-            // location: NEVER call getValue(String::class.java) here; it may be a Map
             val location = readLocationFlexible(s)
 
-            // image: prefer coverImage, then common image fields
-            val imageUrl = firstNonNullString(
+            var imageUrl = firstNonNullString(
                 s,
                 listOf(
                     "coverImage",
@@ -40,13 +37,25 @@ data class Supplier(
                 )
             )
 
-            val phone = firstNonNullString(
-                s, listOf("phone", "phoneNumber", "tel")
-            )
+            val images = readStringList(s, listOf("images", "gallery", "photos"))
+                ?.map { it.trim() }
+                ?.filter { it.isNotBlank() }
+                ?.distinct()
 
+            if (imageUrl.isNullOrBlank() && !images.isNullOrEmpty()) {
+                imageUrl = images.firstOrNull()
+            }
+
+            val phone = firstNonNullString(s, listOf("phone", "phoneNumber", "tel"))
             val category = firstNonNullString(
-                s, listOf("category", "type", "categoryId", "categoryName")
+                s,
+                listOf("category", "categ", "type", "supplierType", "profession")
             )
+            val categoryId = firstNonNullString(s, listOf("categoryId", "category_id"))
+            val categories = readStringList(s, listOf("categories", "tags"))
+                ?.map { it.trim() }
+                ?.filter { it.isNotBlank() }
+                ?.distinct()
 
             return Supplier(
                 id = id,
@@ -55,44 +64,64 @@ data class Supplier(
                 location = location,
                 imageUrl = imageUrl,
                 phone = phone,
-                category = category
+                category = category,
+                categoryId = categoryId,
+                categories = categories,
+                images = images
             )
         }
 
-        // ---------- helpers ----------
-
         private fun firstNonNullString(s: DataSnapshot, keys: List<String>): String? {
             for (k in keys) {
-                val anyVal = s.child(k).value
-                val asStr = coerceToString(anyVal)
-                if (!asStr.isNullOrBlank()) return asStr
+                val anyVal = s.child(k).value ?: continue
+                val str = coerceToString(anyVal)
+                if (!str.isNullOrBlank()) return str
+            }
+            return null
+        }
+
+        private fun readStringList(s: DataSnapshot, keys: List<String>): List<String>? {
+            for (k in keys) {
+                val node = s.child(k)
+                if (!node.exists()) continue
+                val out = mutableListOf<String>()
+                when (val v = node.value) {
+                    is List<*> -> v.forEach { if (it != null) out.add(it.toString()) }
+                    is Map<*, *> -> {
+                        v.forEach { (key, value) ->
+                            if (key != null) out.add(key.toString())
+                            when (value) {
+                                is String -> if (value.isNotBlank()) out.add(value)
+                                is Map<*, *> -> value.keys.filterNotNull()
+                                    .forEach { out.add(it.toString()) }
+
+                                is List<*> -> value.filterNotNull()
+                                    .forEach { out.add(it.toString()) }
+
+                                else -> {}
+                            }
+                        }
+                    }
+
+                    is String -> out.add(v)
+                }
+                if (out.isNotEmpty()) return out
             }
             return null
         }
 
         private fun readLocationFlexible(s: DataSnapshot): String? {
-            // Try multiple nodes that might hold location-ish data
-            val locAny =
-                s.child("location").value
-                    ?: s.child("locationDetail").value
-                    ?: s.child("address").value
-
+            val locAny = s.child("location").value ?: s.child("locationDetail").value
+            ?: s.child("address").value
             when (locAny) {
                 is String -> return locAny
                 is Map<*, *> -> {
-                    // common fields inside a location object
                     val city = coerceToString(locAny["city"])
                     val area = coerceToString(locAny["area"])
-                    val region = coerceToString(locAny["region"])
-                    val name = coerceToString(locAny["name"]) // fallback if exists
                     val parts = listOfNotNull(
                         city?.takeIf { it.isNotBlank() },
-                        area?.takeIf { it.isNotBlank() },
-                        region?.takeIf { it.isNotBlank() },
-                        name?.takeIf { it.isNotBlank() }
-                    )
+                        area?.takeIf { it.isNotBlank() })
                     if (parts.isNotEmpty()) return parts.joinToString(", ")
-                    // As a very last resort: stringify the whole map (not ideal, but safe)
                     return locAny.entries.joinToString(", ") { "${it.key}:${it.value}" }
                 }
 
@@ -101,14 +130,11 @@ data class Supplier(
                     if (joined.isNotBlank()) return joined
                 }
             }
-
-            // Dedicated flat fields as fallback
             val city = firstNonNullString(s, listOf("city"))
             val area = firstNonNullString(s, listOf("area", "region"))
             val parts =
                 listOfNotNull(city?.takeIf { it.isNotBlank() }, area?.takeIf { it.isNotBlank() })
             if (parts.isNotEmpty()) return parts.joinToString(", ")
-
             return null
         }
 
@@ -118,7 +144,6 @@ data class Supplier(
             is Number -> v.toString()
             is Boolean -> v.toString()
             is Map<*, *> -> {
-                // If someone saved an object where a string is expected, try common fields
                 val name = v["name"] ?: v["title"] ?: v["city"] ?: v["area"]
                 when (name) {
                     is String -> name

@@ -11,12 +11,13 @@ class ImageAdapter(private val items: List<String>) : RecyclerView.Adapter<Image
     class VH(val imageView: ImageView) : RecyclerView.ViewHolder(imageView)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-        val size = parent.measuredWidth / 3
+        val span = 3
+        val parentWidth =
+            parent.measuredWidth.takeIf { it > 0 } ?: parent.resources.displayMetrics.widthPixels
+        val size = parentWidth / span
         val iv = ImageView(parent.context)
         iv.layoutParams = FrameLayout.LayoutParams(size, size)
         iv.scaleType = ImageView.ScaleType.CENTER_CROP
-        iv.adjustViewBounds = true
-        iv.clipToOutline = true
         return VH(iv)
     }
 

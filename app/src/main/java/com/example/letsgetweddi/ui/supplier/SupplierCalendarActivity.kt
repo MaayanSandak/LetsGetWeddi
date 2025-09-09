@@ -1,35 +1,31 @@
-package com.example.letsgetweddi.ui.supplier
+package com.example.letsgetweddi.ui
 
-import android.net.Uri
 import android.os.Bundle
-import android.widget.Toast
+import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
-import com.example.letsgetweddi.R
-import com.example.letsgetweddi.utils.UiPermissions
+import com.example.letsgetweddi.databinding.ActivitySupplierCalendarBinding
 
 class SupplierCalendarActivity : AppCompatActivity() {
 
+    private lateinit var binding: ActivitySupplierCalendarBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_supplier_calendar)
+        binding = ActivitySupplierCalendarBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        val supplierId = extractSupplierIdFromDeepLink(intent?.data)
-        if (supplierId.isNullOrBlank()) {
-            finish()
-            return
-        }
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.title = intent.getStringExtra("supplier_name") ?: "Calendar"
 
-        UiPermissions.checkOwner(this, supplierId) { isOwner ->
-            if (!isOwner) {
-                Toast.makeText(this, "View-only", Toast.LENGTH_SHORT).show()
-                finish()
-            }
-        }
+        // TODO: your existing calendar loading logic here (reads supplier_id from intent)
     }
 
-    private fun extractSupplierIdFromDeepLink(data: Uri?): String? {
-        if (data == null) return null
-        val segments = data.pathSegments ?: return null
-        return segments.lastOrNull()
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == android.R.id.home) {
+            onBackPressedDispatcher.onBackPressed()
+            return true
+        }
+        return super.onOptionsItemSelected(item)
     }
 }
