@@ -35,12 +35,11 @@ class AllSuppliersFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        adapter = SupplierAdapter(shown, isFavorites = false)
+        adapter = SupplierAdapter(shown)
         binding.recyclerSuppliers.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerSuppliers.setHasFixedSize(true)
         binding.recyclerSuppliers.adapter = adapter
 
-        // optional UI (search/location) — safe even if left empty
         setupSearch()
         setupLocationSpinner()
 
@@ -54,20 +53,16 @@ class AllSuppliersFragment : Fragment() {
         sv.clearFocus()
         sv.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
-                applyFilter()
-                return true
+                applyFilter(); return true
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                applyFilter()
-                return true
+                applyFilter(); return true
             }
         })
     }
 
     private fun setupLocationSpinner() {
-        // keep current items if you already populate the spinner elsewhere
-        // apply filter on selection change if needed
         binding.spinnerLocation.setOnItemSelectedListenerCompat { applyFilter() }
     }
 
@@ -139,7 +134,6 @@ class AllSuppliersFragment : Fragment() {
         _binding = null
     }
 
-    // small helper to avoid verbose AdapterView listeners
     private fun android.widget.Spinner.setOnItemSelectedListenerCompat(block: () -> Unit) {
         this.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(

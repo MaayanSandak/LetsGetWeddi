@@ -1,41 +1,61 @@
 package com.example.letsgetweddi.ui.gallery
 
 import android.os.Bundle
-import android.view.MenuItem
-import android.view.View
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.example.letsgetweddi.R
+import com.example.letsgetweddi.databinding.ActivityGalleryViewBinding
+import com.google.firebase.storage.FirebaseStorage
 
 class GalleryViewActivity : AppCompatActivity() {
 
+    private lateinit var binding: ActivityGalleryViewBinding
+    private val images = mutableListOf<String>()
+    private lateinit var adapter: ImageAdapter
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_gallery_view)
+        binding = ActivityGalleryViewBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
-        setSupportActionBar(toolbar)
+        setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = intent.getStringExtra("title") ?: "Gallery"
+        binding.toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
-        val images = intent.getStringArrayListExtra("images") ?: arrayListOf()
+        adapter = ImageAdapter(images)
+        binding.recycler.layoutManager = GridLayoutManager(this, 2)
+        binding.recycler.adapter = adapter
 
-        val recycler = findViewById<RecyclerView>(R.id.recycler)
-        recycler.layoutManager = GridLayoutManager(this, 2)
-        recycler.adapter = ImageAdapter(images)
+        val supplierId = intent.getStringExtra("supplierId") ?: return
+        title = "Gallery"
 
-        val textEmpty = findViewById<TextView>(R.id.textEmpty)
-        textEmpty.visibility = if (images.isEmpty()) View.VISIBLE else View.GONE
-    }
+        val ref = FirebaseStorage.getInstance()
+            .reference
+            .child("suppliers/$supplierId/gallery")
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == android.R.id.home) {
-            onBackPressedDispatcher.onBackPressed()
-            return true
-        }
-        return super.onOptionsItemSelected(item)
+        ref.listAll()
+            .addOnSuccessListener { result ->
+                if (result.items.isEmpty()) {
+                    binding.textEmpty.visibility = android.view.View.VISIBLE
+                    return@addOnSuccessListener
+                }
+                var pending = result.items.size
+                result.items.forEach { item ->
+                    item.downloadUrl
+                        .addOnSuccessListener { uri -> images.add(uri.toString()) }
+                        .addOnCompleteListener {
+                            pending -= 1
+                            if (pending <= 0) {
+                                images.sort()
+                                binding.textEmpty.visibility =
+                                    if (images.isEmpty()) android.view.View.VISIBLE
+                                    else android.view.View.GONE
+                                adapter.notifyDataSetChanged()
+                            }
+                        }
+                }
+            }
+            .addOnFailureListener {
+                binding.textEmpty.visibility = android.view.View.VISIBLE
+            }
     }
 }

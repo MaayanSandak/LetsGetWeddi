@@ -1,112 +1,104 @@
 package com.example.letsgetweddi.adapters
 
 import android.content.Intent
+import android.net.Uri
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.example.letsgetweddi.R
-import com.example.letsgetweddi.databinding.ItemSupplierBinding
 import com.example.letsgetweddi.model.Supplier
-import com.example.letsgetweddi.ui.ProviderDetailsActivity
-import com.example.letsgetweddi.ui.gallery.GalleryViewActivity
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.squareup.picasso.Picasso
 
 class SupplierAdapter(
-    private val items: MutableList<Supplier> = mutableListOf()
+    private val items: List<Supplier>,
+    private val isFavorites: Boolean = false // <-- default fixes old call sites
 ) : RecyclerView.Adapter<SupplierAdapter.VH>() {
 
-    inner class VH(val binding: ItemSupplierBinding) : RecyclerView.ViewHolder(binding.root)
+    class VH(v: View) : RecyclerView.ViewHolder(v) {
+        val root: View = v.findViewById(R.id.itemRoot)
+        val image: ImageView = v.findViewById(R.id.imageSupplier)
+        val fav: ImageButton = v.findViewById(R.id.buttonFavorite)
+        val name: TextView = v.findViewById(R.id.textName)
+        val location: TextView = v.findViewById(R.id.textLocation)
+        val subtitle: TextView = v.findViewById(R.id.textSubtitle)
+        val btnCall: ImageButton = v.findViewById(R.id.buttonCall)
+        val btnChat: ImageButton = v.findViewById(R.id.buttonChat)
+        val btnGallery: ImageButton = v.findViewById(R.id.buttonGallery)
+        val btnCalendar: ImageButton = v.findViewById(R.id.buttonCalendar)
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-        val inflater = LayoutInflater.from(parent.context)
-        val binding = ItemSupplierBinding.inflate(inflater, parent, false)
-        return VH(binding)
+        val v = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_supplier, parent, false)
+        return VH(v)
     }
 
     override fun getItemCount(): Int = items.size
 
     override fun onBindViewHolder(holder: VH, position: Int) {
         val s = items[position]
-        val b = holder.binding
 
-        // Texts
-        b.textName.text = s.name.orEmpty()
-        b.textLocation.text = s.location.orEmpty()
-        b.textSubtitle.text =
-            s.description ?: holder.itemView.context.getString(R.string.see_details)
+        holder.name.text = s.name ?: ""
+        holder.location.text = s.location ?: ""
+        holder.subtitle.text = s.description ?: ""
 
-        // Image
-        val url = s.imageUrl
-        if (!url.isNullOrBlank()) {
-            Glide.with(b.imageSupplier).load(url).into(b.imageSupplier)
+        val url = s.imageUrl?.trim().orEmpty()
+        if (url.isNotBlank()) {
+            Picasso.get()
+                .load(url)
+                .placeholder(android.R.drawable.ic_menu_report_image)
+                .fit()
+                .centerCrop()
+                .into(holder.image)
         } else {
-            b.imageSupplier.setImageDrawable(null)
+            holder.image.setImageResource(android.R.drawable.ic_menu_report_image)
         }
 
-        // Favorites (heart icon)
-        val uid = FirebaseAuth.getInstance().currentUser?.uid
-        val favRef: DatabaseReference? =
-            if (uid != null && !s.id.isNullOrBlank())
-                FirebaseDatabase.getInstance().reference
-                    .child("favorites").child(uid).child(s.id!!)
-            else
-                null
-
-        fun setHeart(fav: Boolean) {
-            b.buttonFavorite.setImageResource(
-                if (fav) R.drawable.ic_favorite else R.drawable.ic_favorite_border
-            )
-            b.buttonFavorite.isSelected = fav
+        // Call
+        holder.btnCall.setOnClickListener {
+            val phone = s.phone?.trim().orEmpty()
+            if (phone.isNotEmpty()) {
+                val uri = Uri.parse("tel:$phone")
+                it.context.startActivity(Intent(Intent.ACTION_DIAL, uri))
+            }
         }
 
-        if (favRef != null) {
-            favRef.addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val exists =
-                        snapshot.exists() && snapshot.getValue(Boolean::class.java) != false
-                    setHeart(exists)
-                }
-
-                override fun onCancelled(error: DatabaseError) {}
-            })
-        } else {
-            setHeart(false)
-        }
-
-        b.buttonFavorite.setOnClickListener {
-            if (favRef == null) return@setOnClickListener
-            val now = !b.buttonFavorite.isSelected
-            setHeart(now)
-            if (now) favRef.setValue(true) else favRef.removeValue()
-        }
-
-        // Open gallery
-        b.buttonGallery.setOnClickListener {
+        // Chat
+        holder.btnChat.setOnClickListener {
             val ctx = it.context
-            val intent = Intent(ctx, GalleryViewActivity::class.java)
-            intent.putStringArrayListExtra("images", ArrayList(s.images ?: emptyList()))
-            intent.putExtra("title", s.name ?: "Gallery")
+            val intent = Intent(ctx, com.example.letsgetweddi.ui.chat.ChatActivity::class.java)
+                .putExtra("otherUserId", s.id ?: "")
+                .putExtra("otherUserName", s.name ?: "")
             ctx.startActivity(intent)
         }
 
-        // Open details card (optional; keep if you already had this behavior)
-        b.itemRoot.setOnClickListener {
+        // Gallery
+        holder.btnGallery.setOnClickListener {
             val ctx = it.context
-            val i = Intent(ctx, ProviderDetailsActivity::class.java)
-            i.putExtra("supplierId", s.id)
-            ctx.startActivity(i)
+            val intent =
+                Intent(ctx, com.example.letsgetweddi.ui.gallery.GalleryViewActivity::class.java)
+                    .putExtra("supplierId", s.id ?: "")
+            ctx.startActivity(intent)
         }
-    }
 
-    fun submit(list: List<Supplier>) {
-        items.clear()
-        items.addAll(list)
-        notifyDataSetChanged()
+        // Calendar
+        holder.btnCalendar.setOnClickListener {
+            val ctx = it.context
+            val intent = Intent(
+                ctx,
+                com.example.letsgetweddi.ui.supplier.SupplierCalendarActivity::class.java
+            )
+                .putExtra("supplierId", s.id ?: "")
+            ctx.startActivity(intent)
+        }
+
+        // Favorite icon visual state only
+        holder.fav.setImageResource(
+            if (isFavorites) R.drawable.ic_favorite else R.drawable.ic_favorite_border
+        )
     }
 }

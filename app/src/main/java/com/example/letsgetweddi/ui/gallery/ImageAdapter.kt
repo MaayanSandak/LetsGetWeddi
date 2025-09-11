@@ -1,34 +1,35 @@
 package com.example.letsgetweddi.ui.gallery
 
+import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
+import com.example.letsgetweddi.R
 import com.squareup.picasso.Picasso
 
-class ImageAdapter(private val items: List<String>) : RecyclerView.Adapter<ImageAdapter.VH>() {
+class ImageAdapter(private val items: List<String>) :
+    RecyclerView.Adapter<ImageAdapter.VH>() {
 
-    class VH(val imageView: ImageView) : RecyclerView.ViewHolder(imageView)
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-        val span = 3
-        val parentWidth =
-            parent.measuredWidth.takeIf { it > 0 } ?: parent.resources.displayMetrics.widthPixels
-        val size = parentWidth / span
-        val iv = ImageView(parent.context)
-        iv.layoutParams = FrameLayout.LayoutParams(size, size)
-        iv.scaleType = ImageView.ScaleType.CENTER_CROP
-        return VH(iv)
+    class VH(v: View) : RecyclerView.ViewHolder(v) {
+        val image: ImageView = v.findViewById(R.id.image)
     }
 
-    override fun onBindViewHolder(holder: VH, position: Int) {
-        val url = items[position]
-        if (url.startsWith("android.resource://")) {
-            holder.imageView.setImageURI(android.net.Uri.parse(url))
-        } else {
-            Picasso.get().load(url).fit().centerCrop().into(holder.imageView)
-        }
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
+        val v = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_gallery_image, parent, false)
+        return VH(v)
     }
 
     override fun getItemCount(): Int = items.size
+
+    override fun onBindViewHolder(holder: VH, position: Int) {
+        val url = items[position]
+        Picasso.get()
+            .load(url)
+            .placeholder(android.R.drawable.ic_menu_gallery)
+            .error(android.R.drawable.ic_menu_report_image)
+            .fit().centerCrop()
+            .into(holder.image)
+    }
 }

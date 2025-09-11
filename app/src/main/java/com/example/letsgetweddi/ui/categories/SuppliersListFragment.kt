@@ -52,7 +52,7 @@ class SuppliersListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        adapter = SupplierAdapter(shown, isFavorites = false)
+        adapter = SupplierAdapter(shown)
         binding.recycler.layoutManager = LinearLayoutManager(requireContext())
         binding.recycler.setHasFixedSize(true)
         binding.recycler.adapter = adapter
@@ -89,7 +89,6 @@ class SuppliersListFragment : Fragment() {
             db.getReference("suppliers")
         )
 
-        // Build queries against common fields and map keys
         val queries = mutableListOf<Query>()
         for (base in baseRefs) {
             queries += base.orderByChild("categoryId").equalTo(categoryArg)
@@ -115,9 +114,8 @@ class SuppliersListFragment : Fragment() {
                 binding.progressBar.visibility = View.GONE
                 binding.textEmpty.visibility = if (shown.isEmpty()) View.VISIBLE else View.GONE
                 adapter.notifyDataSetChanged()
-                Log.d(TAG, "loadByCategoryOrId (queried) '$categoryArg' -> shown=${shown.size}")
+                Log.d(TAG, "loadByCategoryOrId (queried '$categoryArg') -> shown=${shown.size}")
             } else {
-                // Fallback: fetch all and filter client-side (very permissive)
                 Log.d(TAG, "no results from queries, fallback to client filter")
                 val refs = baseRefs
                 collectFromRefs(refs) { list ->
@@ -156,12 +154,14 @@ class SuppliersListFragment : Fragment() {
                             added++
                         }
                     }
-                    Log.d(TAG, "collectFromRefs '${ref.path}': added=$added total=${all.size}")
+                    val refName = ref.key ?: ref.toString()
+                    Log.d(TAG, "collectFromRefs '$refName': added=$added total=${all.size}")
                     if (--remaining == 0) done(all.values.toList())
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    Log.w(TAG, "collectFromRefs cancelled '${ref.path}': ${error.message}")
+                    val refName = ref.key ?: ref.toString()
+                    Log.w(TAG, "collectFromRefs cancelled '$refName': ${error.message}")
                     if (--remaining == 0) done(all.values.toList())
                 }
             })
@@ -190,12 +190,14 @@ class SuppliersListFragment : Fragment() {
                             added++
                         }
                     }
-                    Log.d(TAG, "collectFromQueries '${q.ref.path}' added=$added accum=${all.size}")
+                    val qName = q.ref.key ?: q.toString()
+                    Log.d(TAG, "collectFromQueries '$qName' added=$added accum=${all.size}")
                     if (--remaining == 0) done(all.values.toList())
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    Log.w(TAG, "collectFromQueries cancelled '${q.ref.path}': ${error.message}")
+                    val qName = q.ref.key ?: q.toString()
+                    Log.w(TAG, "collectFromQueries cancelled '$qName': ${error.message}")
                     if (--remaining == 0) done(all.values.toList())
                 }
             })
@@ -204,14 +206,10 @@ class SuppliersListFragment : Fragment() {
 
     private fun matchesByAnyField(s: Supplier, wantedNorm: String): Boolean {
         if (wantedNorm.isBlank()) return true
-        val cands = listOfNotNull(
-            s.category, s.categoryId
-        ) + (s.categories ?: emptyList())
+        val cands = listOfNotNull(s.category, s.categoryId) + (s.categories ?: emptyList())
         return cands.any {
             normalizeBasic(it).let { n ->
-                n == wantedNorm || n.contains(wantedNorm) || wantedNorm.contains(
-                    n
-                )
+                n == wantedNorm || n.contains(wantedNorm) || wantedNorm.contains(n)
             }
         }
     }

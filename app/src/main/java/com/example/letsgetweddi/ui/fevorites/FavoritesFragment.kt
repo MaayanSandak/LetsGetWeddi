@@ -30,7 +30,7 @@ class FavoritesFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        adapter = SupplierAdapter(favorites, isFavorites = true)
+        adapter = SupplierAdapter(favorites)
         binding.recyclerFavorites.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerFavorites.adapter = adapter
 
@@ -48,6 +48,7 @@ class FavoritesFragment : Fragment() {
                 adapter.notifyDataSetChanged()
                 binding.textEmpty.visibility = if (favorites.isEmpty()) View.VISIBLE else View.GONE
             }
+
             override fun onCancelled(error: DatabaseError) {
                 binding.textEmpty.visibility = View.VISIBLE
             }

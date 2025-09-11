@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
+import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.letsgetweddi.R
@@ -22,6 +23,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.storage.FirebaseStorage
 import com.squareup.picasso.Picasso
 
 class ProviderDetailsActivity : AppCompatActivity() {
@@ -81,6 +83,7 @@ class ProviderDetailsActivity : AppCompatActivity() {
             val uri = Uri.parse("https://wa.me/${phone.replace("+", "")}")
             startActivity(Intent(Intent.ACTION_VIEW, uri))
         }
+
         binding.buttonChat.setOnClickListener {
             val peer = supplierId ?: return@setOnClickListener
             val intent = Intent(this, com.example.letsgetweddi.ui.chat.ChatActivity::class.java)
@@ -88,6 +91,7 @@ class ProviderDetailsActivity : AppCompatActivity() {
                 .putExtra("otherUserName", supplier?.name ?: "")
             startActivity(intent)
         }
+
         binding.buttonFav.setOnClickListener { toggleFavorite() }
 
         binding.buttonEdit.setOnClickListener {
@@ -102,22 +106,22 @@ class ProviderDetailsActivity : AppCompatActivity() {
             val id = supplierId ?: return@setOnClickListener
             startActivity(
                 Intent(this, com.example.letsgetweddi.ui.gallery.GalleryManageActivity::class.java)
-                    .setData(Uri.parse("letsgetweddi://gallery/manage/$id"))
+                    .putExtra("supplierId", id)
             )
         }
 
+        // ✅ use existing calendar screen
         binding.buttonManageAvailability.setOnClickListener {
             val id = supplierId ?: return@setOnClickListener
             startActivity(
                 Intent(
                     this,
                     com.example.letsgetweddi.ui.supplier.SupplierCalendarActivity::class.java
-                )
-                    .setData(Uri.parse("letsgetweddi://availability/$id"))
-                    .putExtra("supplierId", id)
+                ).putExtra("supplierId", id)
             )
         }
     }
+
 
     private fun loadSupplier() {
         val id = supplierId ?: return
@@ -152,12 +156,8 @@ class ProviderDetailsActivity : AppCompatActivity() {
         binding.textLocation.text = s.location.orEmpty()
         binding.textDescription.text = s.description.orEmpty()
 
-        val img = s.imageUrl.orEmpty().trim()
-        if (img.isNotBlank()) {
-            Picasso.get().load(img).into(binding.imageHeader)
-        } else {
-            binding.imageHeader.setImageDrawable(null)
-        }
+        val header = s.imageUrl.orEmpty().trim()
+        loadInto(binding.imageHeader, header)
 
         RoleManager.isSupplier(this) { isSupplier, mySupplierId ->
             val canEdit = isSupplier && !mySupplierId.isNullOrBlank() && mySupplierId == s.id
@@ -170,6 +170,33 @@ class ProviderDetailsActivity : AppCompatActivity() {
 
         mountInlineGalleryIfPossible()
         loadAvailabilityHint()
+    }
+
+    private fun loadInto(target: ImageView, pathOrUrl: String) {
+        if (pathOrUrl.isBlank()) {
+            target.setImageDrawable(null)
+            return
+        }
+        // If it looks like an HTTP(S) URL – load directly
+        if (pathOrUrl.startsWith("http", ignoreCase = true)) {
+            Picasso.get().load(pathOrUrl)
+                .placeholder(android.R.drawable.ic_menu_gallery)
+                .error(android.R.drawable.ic_menu_report_image)
+                .fit().centerCrop()
+                .into(target)
+            return
+        }
+        // Otherwise treat as Storage path (e.g. "suppliers/sup_dj_001/cover dj.avif")
+        FirebaseStorage.getInstance().reference.child(pathOrUrl)
+            .downloadUrl
+            .addOnSuccessListener { uri ->
+                Picasso.get().load(uri)
+                    .placeholder(android.R.drawable.ic_menu_gallery)
+                    .error(android.R.drawable.ic_menu_report_image)
+                    .fit().centerCrop()
+                    .into(target)
+            }
+            .addOnFailureListener { target.setImageDrawable(null) }
     }
 
     private fun observeFavorite() {
