@@ -37,12 +37,12 @@
             android:text="@string/no_availability"
             android:visibility="gone" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler"
+        <CalendarView
+            android:id="@+id/calendarView"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:overScrollMode="ifContentScrolls" />
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" />
+
     </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

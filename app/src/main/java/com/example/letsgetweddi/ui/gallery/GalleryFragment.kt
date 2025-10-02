@@ -19,10 +19,12 @@ class GalleryFragment : Fragment() {
     private val images = mutableListOf<String>()
     private lateinit var adapter: ImageAdapter
     private var supplierId: String? = null
+    private var categoryId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         supplierId = arguments?.getString("supplierId")
+        categoryId = arguments?.getString("categoryId")
     }
 
     override fun onCreateView(
@@ -42,42 +44,46 @@ class GalleryFragment : Fragment() {
         binding.recycler.adapter = adapter
 
         binding.header.setOnClickListener {
-            supplierId?.let { id ->
+            val id = supplierId
+            val category = categoryId
+            if (!id.isNullOrBlank() && !category.isNullOrBlank()) {
                 val uri = Uri.parse("letsgetweddi://gallery/$id")
                 startActivity(
                     Intent(Intent.ACTION_VIEW, uri)
                         .putExtra("supplierId", id)
+                        .putExtra("categoryId", category)
                 )
             }
         }
 
-        supplierId?.let { loadFromStorage(it) } ?: showEmpty(true)
+        if (!supplierId.isNullOrBlank()) {
+            loadFromStorage(supplierId!!)
+        } else {
+            showEmpty(true)
+        }
     }
 
-    private fun loadFromStorage(id: String) {
+    private fun loadFromStorage(supplierId: String) {
         images.clear()
         adapter.notifyDataSetChanged()
         showEmpty(false)
 
-        val ref = FirebaseStorage.getInstance().reference.child("suppliers/$id/gallery")
-        ref.listAll()
+        val root = FirebaseStorage.getInstance().reference
+            .child("suppliers/$supplierId/gallery")
+
+        root.listAll()
             .addOnSuccessListener { result ->
-                if (result.items.isEmpty()) {
-                    showEmpty(true); return@addOnSuccessListener
-                }
-                var remaining = result.items.size
-                result.items.forEach { fileRef ->
-                    fileRef.downloadUrl
-                        .addOnSuccessListener { uri -> images.add(uri.toString()) }
+                result.items.forEach { ref ->
+                    ref.downloadUrl
+                        .addOnSuccessListener { uri ->
+                            images.add(uri.toString())
+                        }
                         .addOnCompleteListener {
-                            remaining -= 1
-                            if (remaining == 0) {
-                                adapter.notifyDataSetChanged()
-                                showEmpty(images.isEmpty())
-                            }
+                            adapter.notifyDataSetChanged()
                         }
                 }
             }
+
             .addOnFailureListener { showEmpty(true) }
     }
 
@@ -92,9 +98,12 @@ class GalleryFragment : Fragment() {
     }
 
     companion object {
-        fun newInstance(supplierId: String): GalleryFragment {
+        fun newInstance(supplierId: String, categoryId: String): GalleryFragment {
             return GalleryFragment().apply {
-                arguments = Bundle().apply { putString("supplierId", supplierId) }
+                arguments = Bundle().apply {
+                    putString("supplierId", supplierId)
+                    putString("categoryId", categoryId)
+                }
             }
         }
     }

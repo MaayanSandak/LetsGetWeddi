@@ -14,6 +14,7 @@ import com.example.letsgetweddi.data.FirebaseRefs
 import com.example.letsgetweddi.model.Supplier
 import com.example.letsgetweddi.ui.gallery.GalleryViewActivity
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.storage.FirebaseStorage
 import com.squareup.picasso.Picasso
 
 class SupplierAdapter(
@@ -26,7 +27,6 @@ class SupplierAdapter(
         val name: TextView = v.findViewById(R.id.textName)
         val location: TextView = v.findViewById(R.id.textLocation)
         val subtitle: TextView = v.findViewById(R.id.textSubtitle)
-
         val btnCall: ImageButton = v.findViewById(R.id.buttonCall)
         val btnChat: ImageButton = v.findViewById(R.id.buttonChat)
         val btnGallery: ImageButton = v.findViewById(R.id.buttonGallery)
@@ -45,7 +45,6 @@ class SupplierAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val s = items[position]
 
-
         holder.name.text = s.name ?: ""
         holder.location.text = s.location ?: ""
         holder.subtitle.text =
@@ -53,7 +52,20 @@ class SupplierAdapter(
 
         val placeholder = android.R.drawable.ic_menu_report_image
         val url = (s.imageUrl ?: "").trim()
-        if (url.isNotEmpty()) {
+        if (url.startsWith("gs://")) {
+            val ref = FirebaseStorage.getInstance().getReferenceFromUrl(url)
+            ref.downloadUrl.addOnSuccessListener { uri ->
+                Picasso.get()
+                    .load(uri.toString())
+                    .placeholder(placeholder)
+                    .error(placeholder)
+                    .fit()
+                    .centerCrop()
+                    .into(holder.image)
+            }.addOnFailureListener {
+                holder.image.setImageResource(placeholder)
+            }
+        } else if (url.isNotEmpty()) {
             Picasso.get()
                 .load(url)
                 .placeholder(placeholder)
@@ -65,7 +77,6 @@ class SupplierAdapter(
             holder.image.setImageResource(placeholder)
         }
 
-        // Favorite icon state
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         if (uid != null && !s.id.isNullOrBlank()) {
             FirebaseRefs.favorite(uid, s.id!!).get().addOnSuccessListener { snap ->
@@ -77,7 +88,6 @@ class SupplierAdapter(
             holder.btnFav.setImageResource(R.drawable.ic_favorite_border)
         }
 
-        // Call
         holder.btnCall.setOnClickListener {
             val phone = s.phone?.trim().orEmpty()
             if (phone.isNotEmpty()) {
@@ -86,21 +96,16 @@ class SupplierAdapter(
             }
         }
 
-        // Chat
         holder.btnChat.setOnClickListener {
             if (!s.id.isNullOrBlank()) {
                 val ctx = it.context
-                val intent = Intent(
-                    ctx,
-                    com.example.letsgetweddi.ui.chat.ChatActivity::class.java
-                )
+                val intent = Intent(ctx, com.example.letsgetweddi.ui.chat.ChatActivity::class.java)
                     .putExtra("otherUserId", s.id)
                     .putExtra("otherUserName", s.name ?: "")
                 ctx.startActivity(intent)
             }
         }
 
-        // Gallery
         holder.btnGallery.setOnClickListener {
             if (!s.id.isNullOrBlank()) {
                 val ctx = it.context
@@ -111,7 +116,6 @@ class SupplierAdapter(
             }
         }
 
-        // Calendar / Availability
         holder.btnCalendar.setOnClickListener {
             if (!s.id.isNullOrBlank()) {
                 val ctx = it.context
@@ -119,12 +123,12 @@ class SupplierAdapter(
                     Intent(
                         ctx,
                         com.example.letsgetweddi.ui.supplier.AvailabilityActivity::class.java
-                    ).putExtra("supplierId", s.id)
+                    )
+                        .putExtra("supplierId", s.id)
                 )
             }
         }
 
-        // Toggle favorite
         holder.btnFav.setOnClickListener { v ->
             val user = FirebaseAuth.getInstance().currentUser ?: return@setOnClickListener
             val supId = s.id ?: return@setOnClickListener
@@ -140,7 +144,6 @@ class SupplierAdapter(
             }
         }
 
-        // Open details when clicking the whole card
         holder.itemView.setOnClickListener {
             if (!s.id.isNullOrBlank()) {
                 val ctx = it.context
@@ -152,7 +155,6 @@ class SupplierAdapter(
         }
     }
 
-    // Helper to replace all items (optional, used by fragments)
     fun submitList(newItems: List<Supplier>) {
         items.clear()
         items.addAll(newItems)

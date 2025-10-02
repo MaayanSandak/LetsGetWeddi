@@ -18,7 +18,11 @@ import com.example.letsgetweddi.ui.gallery.GalleryFragment
 import com.example.letsgetweddi.ui.supplier.AvailabilityActivity
 import com.example.letsgetweddi.utils.RoleManager
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 import com.squareup.picasso.Picasso
 
@@ -29,6 +33,7 @@ class ProviderDetailsActivity : AppCompatActivity() {
     private val db by lazy { FirebaseDatabase.getInstance() }
     private var supplierId: String? = null
     private var supplier: Supplier? = null
+    private var categoryId: String? = null
     private val reviews: MutableList<Pair<String, String>> = mutableListOf()
     private lateinit var reviewsAdapter: ReviewAdapter
 
@@ -41,6 +46,8 @@ class ProviderDetailsActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         supplierId = intent.getStringExtra(EXTRA_SUPPLIER_ID)
+        categoryId = supplier?.categoryId
+
 
         setupToolbar()
         setupLists()
@@ -102,7 +109,9 @@ class ProviderDetailsActivity : AppCompatActivity() {
             val id = supplierId ?: return@setOnClickListener
             startActivity(
                 Intent(this, com.example.letsgetweddi.ui.gallery.GalleryViewActivity::class.java)
-                    .putExtra(EXTRA_SUPPLIER_ID, id)
+                    .putExtra(ProviderDetailsActivity.EXTRA_SUPPLIER_ID, supplier?.id)
+                    .putExtra("categoryId", supplier?.categoryId)
+
             )
         }
 
@@ -295,14 +304,16 @@ class ProviderDetailsActivity : AppCompatActivity() {
     }
 
     private fun mountInlineGalleryIfPossible() {
-        val sId = supplierId ?: return
+        val sid = supplierId ?: return
+        val cid = categoryId ?: return
+
         if (supportFragmentManager.findFragmentById(R.id.galleryContainer) == null) {
-            val f = GalleryFragment.newInstance(sId)
             supportFragmentManager.beginTransaction()
-                .replace(R.id.galleryContainer, f)
+                .replace(R.id.galleryContainer, GalleryFragment.newInstance(sid, cid))
                 .commitAllowingStateLoss()
         }
     }
+
 
     override fun onDestroy() {
         super.onDestroy()
