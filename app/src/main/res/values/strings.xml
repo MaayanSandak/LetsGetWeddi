@@ -135,5 +135,7 @@
     <string name="no_suppliers_found">No suppliers found</string>
     <string name="list_of_suppliers">List of suppliers</string>
 
+    <string name="availability_title">Availability</string>
+    <string name="availability_empty">No availability yet</string>
 
 </resources>

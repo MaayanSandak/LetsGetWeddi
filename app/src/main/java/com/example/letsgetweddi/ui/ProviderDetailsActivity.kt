@@ -5,7 +5,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
-import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.letsgetweddi.R
@@ -16,13 +15,10 @@ import com.example.letsgetweddi.databinding.ActivityProviderDetailsBinding
 import com.example.letsgetweddi.model.Review
 import com.example.letsgetweddi.model.Supplier
 import com.example.letsgetweddi.ui.gallery.GalleryFragment
+import com.example.letsgetweddi.ui.supplier.AvailabilityActivity
 import com.example.letsgetweddi.utils.RoleManager
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.*
 import com.google.firebase.storage.FirebaseStorage
 import com.squareup.picasso.Picasso
 
@@ -44,7 +40,7 @@ class ProviderDetailsActivity : AppCompatActivity() {
         binding = ActivityProviderDetailsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        supplierId = intent.getStringExtra("supplierId")
+        supplierId = intent.getStringExtra(EXTRA_SUPPLIER_ID)
 
         setupToolbar()
         setupLists()
@@ -52,7 +48,7 @@ class ProviderDetailsActivity : AppCompatActivity() {
 
         loadSupplier()
         observeFavorite()
-        loadReviews()
+        loadReviewsMultiPath()
         loadAvailabilityHint()
         mountInlineGalleryIfPossible()
     }
@@ -98,30 +94,26 @@ class ProviderDetailsActivity : AppCompatActivity() {
             val id = supplierId ?: return@setOnClickListener
             startActivity(
                 Intent(this, com.example.letsgetweddi.ui.supplier.SupplierEditActivity::class.java)
-                    .putExtra("supplierId", id)
+                    .putExtra(EXTRA_SUPPLIER_ID, id)
             )
         }
 
         binding.buttonManageGallery.setOnClickListener {
             val id = supplierId ?: return@setOnClickListener
             startActivity(
-                Intent(this, com.example.letsgetweddi.ui.gallery.GalleryManageActivity::class.java)
-                    .putExtra("supplierId", id)
+                Intent(this, com.example.letsgetweddi.ui.gallery.GalleryViewActivity::class.java)
+                    .putExtra(EXTRA_SUPPLIER_ID, id)
             )
         }
 
-        // ✅ use existing calendar screen
         binding.buttonManageAvailability.setOnClickListener {
             val id = supplierId ?: return@setOnClickListener
             startActivity(
-                Intent(
-                    this,
-                    com.example.letsgetweddi.ui.supplier.SupplierCalendarActivity::class.java
-                ).putExtra("supplierId", id)
+                Intent(this, AvailabilityActivity::class.java)
+                    .putExtra(EXTRA_SUPPLIER_ID, id)
             )
         }
     }
-
 
     private fun loadSupplier() {
         val id = supplierId ?: return
@@ -156,8 +148,8 @@ class ProviderDetailsActivity : AppCompatActivity() {
         binding.textLocation.text = s.location.orEmpty()
         binding.textDescription.text = s.description.orEmpty()
 
-        val header = s.imageUrl.orEmpty().trim()
-        loadInto(binding.imageHeader, header)
+        // COVER image: accept http/https or storage path; try common filenames as fallback
+        loadSupplierCover(binding.imageHeader, s.id, s.imageUrl)
 
         RoleManager.isSupplier(this) { isSupplier, mySupplierId ->
             val canEdit = isSupplier && !mySupplierId.isNullOrBlank() && mySupplierId == s.id
@@ -170,33 +162,6 @@ class ProviderDetailsActivity : AppCompatActivity() {
 
         mountInlineGalleryIfPossible()
         loadAvailabilityHint()
-    }
-
-    private fun loadInto(target: ImageView, pathOrUrl: String) {
-        if (pathOrUrl.isBlank()) {
-            target.setImageDrawable(null)
-            return
-        }
-        // If it looks like an HTTP(S) URL – load directly
-        if (pathOrUrl.startsWith("http", ignoreCase = true)) {
-            Picasso.get().load(pathOrUrl)
-                .placeholder(android.R.drawable.ic_menu_gallery)
-                .error(android.R.drawable.ic_menu_report_image)
-                .fit().centerCrop()
-                .into(target)
-            return
-        }
-        // Otherwise treat as Storage path (e.g. "suppliers/sup_dj_001/cover dj.avif")
-        FirebaseStorage.getInstance().reference.child(pathOrUrl)
-            .downloadUrl
-            .addOnSuccessListener { uri ->
-                Picasso.get().load(uri)
-                    .placeholder(android.R.drawable.ic_menu_gallery)
-                    .error(android.R.drawable.ic_menu_report_image)
-                    .fit().centerCrop()
-                    .into(target)
-            }
-            .addOnFailureListener { target.setImageDrawable(null) }
     }
 
     private fun observeFavorite() {
@@ -237,39 +202,95 @@ class ProviderDetailsActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadReviews() {
+    /** Load reviews from multiple common paths to cover old/new schemas */
+    private fun loadReviewsMultiPath() {
         val sId = supplierId ?: return
-        val ref = FirebaseRefs.reviews(sId)
-        ref.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                var sum = 0f
-                var count = 0
-                reviews.clear()
-                for (child in snapshot.children) {
-                    val r = child.getValue(Review::class.java) ?: continue
-                    if (!r.comment.isNullOrBlank()) {
-                        reviews.add((r.name ?: "") to r.comment!!)
-                    }
-                    if (r.rating > 0f) {
-                        sum += r.rating
-                        count += 1
-                    }
-                }
-                binding.textRatingCount.text = count.toString()
-                binding.textRatingAvg.text =
-                    if (count > 0) String.format("%.1f", sum / count) else "0.0"
-                reviewsAdapter.notifyDataSetChanged()
-            }
+        val listeners = mutableListOf<DatabaseReference>()
 
-            override fun onCancelled(error: DatabaseError) {}
-        })
+        fun attach(ref: DatabaseReference) {
+            listeners += ref
+            ref.addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    recomputeReviews() // recompute from all paths
+                }
+
+                override fun onCancelled(error: DatabaseError) {}
+            })
+        }
+
+        attach(FirebaseRefs.reviews(sId))
+        attach(db.getReference("suppliers/$sId/reviews"))
+        attach(db.getReference("Suppliers/$sId/reviews"))
+
+        // one recompute that merges everything
+        fun collectFrom(ref: DatabaseReference, bag: MutableList<Review>) {
+            // single read (cached by Realtime DB)
+            ref.get().addOnSuccessListener { snap ->
+                for (c in snap.children) {
+                    c.getValue(Review::class.java)?.let { bag += it }
+                }
+                recomputeReviews()
+            }
+        }
+
+        val bag = mutableListOf<Review>()
+        collectFrom(FirebaseRefs.reviews(sId), bag)
+        collectFrom(db.getReference("suppliers/$sId/reviews"), bag)
+        collectFrom(db.getReference("Suppliers/$sId/reviews"), bag)
+    }
+
+    private fun recomputeReviews() {
+        val sId = supplierId ?: return
+        val paths = listOf(
+            FirebaseRefs.reviews(sId),
+            db.getReference("suppliers/$sId/reviews"),
+            db.getReference("Suppliers/$sId/reviews")
+        )
+        val bag = mutableListOf<Review>()
+
+        fun read(ref: DatabaseReference, done: () -> Unit) {
+            ref.get().addOnSuccessListener { snap ->
+                for (c in snap.children) {
+                    c.getValue(Review::class.java)?.let { bag += it }
+                }
+                done()
+            }.addOnFailureListener { done() }
+        }
+
+        var remaining = paths.size
+        paths.forEach { ref ->
+            read(ref) {
+                remaining -= 1
+                if (remaining == 0) {
+                    var sum = 0f
+                    var count = 0
+                    reviews.clear()
+                    for (r in bag) {
+                        if (!r.comment.isNullOrBlank()) {
+                            reviews.add((r.name ?: "") to r.comment!!)
+                        }
+                        if (r.rating > 0f) {
+                            sum += r.rating
+                            count += 1
+                        }
+                    }
+                    binding.textRatingCount.text = count.toString()
+                    binding.textRatingAvg.text =
+                        if (count > 0) String.format("%.1f", sum / count) else "0.0"
+                    reviewsAdapter.notifyDataSetChanged()
+                }
+            }
+        }
     }
 
     private fun loadAvailabilityHint() {
         val sId = supplierId ?: return
         FirebaseRefs.availability(sId).get().addOnSuccessListener { snap ->
+            // Show hint only when there is NO availability data
             binding.textAvailability.visibility =
                 if (snap.hasChildren()) View.GONE else View.VISIBLE
+        }.addOnFailureListener {
+            binding.textAvailability.visibility = View.VISIBLE
         }
     }
 
@@ -288,5 +309,52 @@ class ProviderDetailsActivity : AppCompatActivity() {
         favListener?.let { favRef?.removeEventListener(it) }
         favListener = null
         favRef = null
+    }
+
+    // ---- helpers ----
+
+    private fun loadSupplierCover(
+        target: android.widget.ImageView,
+        sId: String?,
+        urlOrPath: String?
+    ) {
+        val v = (urlOrPath ?: "").trim()
+        if (v.startsWith("http", true)) {
+            Picasso.get().load(v).fit().centerCrop().into(target)
+            return
+        }
+        val id = sId ?: return
+        val storage = FirebaseStorage.getInstance().reference
+        val candidates = listOf(
+            v,
+            "suppliers/$id/cover.jpg",
+            "suppliers/$id/cover.jpeg",
+            "suppliers/$id/cover.png",
+            "suppliers/$id/cover.webp",
+            "suppliers/$id/cover.avif",
+            "suppliers/$id/cover dj.avif" // your current demo file name
+        ).filter { it.isNotBlank() }
+
+        fun tryIndex(i: Int) {
+            if (i >= candidates.size) {
+                target.setImageDrawable(null)
+                return
+            }
+            val path = candidates[i]
+            if (path.startsWith("http", true)) {
+                Picasso.get().load(path).fit().centerCrop().into(target)
+            } else {
+                storage.child(path).downloadUrl
+                    .addOnSuccessListener { uri ->
+                        Picasso.get().load(uri).fit().centerCrop().into(target)
+                    }
+                    .addOnFailureListener { tryIndex(i + 1) }
+            }
+        }
+        tryIndex(0)
+    }
+
+    companion object {
+        const val EXTRA_SUPPLIER_ID = "supplierId"
     }
 }

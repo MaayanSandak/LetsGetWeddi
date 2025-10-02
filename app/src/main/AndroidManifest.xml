@@ -32,8 +32,42 @@
 
         <activity
             android:name=".ui.gallery.GalleryViewActivity"
-            android:exported="false"
-            android:label="@string/gallery" />
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="gallery"
+                    android:pathPrefix="/"
+                    android:scheme="letsgetweddi" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.supplier.AvailabilityActivity"
+            android:exported="true">
+            <!-- supports letsgetweddi://availability/{supplierId} -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="availability"
+                    android:scheme="letsgetweddi" />
+            </intent-filter>
+        </activity>
+
 
         <activity
             android:name=".ui.gallery.GalleryManageActivity"

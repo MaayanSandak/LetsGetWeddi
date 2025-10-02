@@ -1,14 +1,13 @@
 package com.example.letsgetweddi.ui.gallery
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.example.letsgetweddi.R
 import com.example.letsgetweddi.databinding.FragmentGalleryBinding
 import com.google.firebase.storage.FirebaseStorage
 
@@ -17,74 +16,74 @@ class GalleryFragment : Fragment() {
     private var _binding: FragmentGalleryBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var recycler: RecyclerView
-    private lateinit var emptyText: TextView
-
-    private val images = ArrayList<String>()
+    private val images = mutableListOf<String>()
     private lateinit var adapter: ImageAdapter
-
     private var supplierId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        supplierId = arguments?.getString(ARG_SUPPLIER_ID)
+        supplierId = arguments?.getString("supplierId")
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
     ): View {
         _binding = FragmentGalleryBinding.inflate(inflater, container, false)
-        // Be robust even if the generated binding field name differs:
-        recycler = binding.root.findViewById(R.id.recycler)
-        emptyText = binding.root.findViewById(R.id.textEmpty)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         adapter = ImageAdapter(images)
-        recycler.layoutManager = GridLayoutManager(requireContext(), 2)
-        recycler.setHasFixedSize(true)
-        recycler.adapter = adapter
-        loadFromStorage()
+        binding.recycler.layoutManager = GridLayoutManager(requireContext(), 2)
+        binding.recycler.adapter = adapter
+
+        binding.header.setOnClickListener {
+            supplierId?.let { id ->
+                val uri = Uri.parse("letsgetweddi://gallery/$id")
+                startActivity(
+                    Intent(Intent.ACTION_VIEW, uri)
+                        .putExtra("supplierId", id)
+                )
+            }
+        }
+
+        supplierId?.let { loadFromStorage(it) } ?: showEmpty(true)
     }
 
-    private fun loadFromStorage() {
-        val id = supplierId ?: return
-        emptyText.visibility = View.GONE
+    private fun loadFromStorage(id: String) {
         images.clear()
         adapter.notifyDataSetChanged()
+        showEmpty(false)
 
-        val ref = FirebaseStorage.getInstance()
-            .reference.child("suppliers/$id/gallery")
-
+        val ref = FirebaseStorage.getInstance().reference.child("suppliers/$id/gallery")
         ref.listAll()
             .addOnSuccessListener { result ->
                 if (result.items.isEmpty()) {
-                    emptyText.visibility = View.VISIBLE
-                    return@addOnSuccessListener
+                    showEmpty(true); return@addOnSuccessListener
                 }
-                // Fetch download URLs in order; update adapter when all done
                 var remaining = result.items.size
-                result.items.forEach { item ->
-                    item.downloadUrl
-                        .addOnSuccessListener { uri ->
-                            images.add(uri.toString())
-                        }
+                result.items.forEach { fileRef ->
+                    fileRef.downloadUrl
+                        .addOnSuccessListener { uri -> images.add(uri.toString()) }
                         .addOnCompleteListener {
                             remaining -= 1
                             if (remaining == 0) {
-                                images.sort()
                                 adapter.notifyDataSetChanged()
-                                emptyText.visibility =
-                                    if (images.isEmpty()) View.VISIBLE else View.GONE
+                                showEmpty(images.isEmpty())
                             }
                         }
                 }
             }
-            .addOnFailureListener {
-                emptyText.visibility = View.VISIBLE
-            }
+            .addOnFailureListener { showEmpty(true) }
+    }
+
+    private fun showEmpty(empty: Boolean) {
+        binding.textEmpty.visibility = if (empty) View.VISIBLE else View.GONE
+        binding.recycler.visibility = if (empty) View.GONE else View.VISIBLE
     }
 
     override fun onDestroyView() {
@@ -93,11 +92,9 @@ class GalleryFragment : Fragment() {
     }
 
     companion object {
-        private const val ARG_SUPPLIER_ID = "supplierId"
-
         fun newInstance(supplierId: String): GalleryFragment {
             return GalleryFragment().apply {
-                arguments = Bundle().apply { putString(ARG_SUPPLIER_ID, supplierId) }
+                arguments = Bundle().apply { putString("supplierId", supplierId) }
             }
         }
     }

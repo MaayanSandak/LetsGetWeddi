@@ -27,9 +27,10 @@ class ImageAdapter(private val items: List<String>) :
         val url = items[position]
         Picasso.get()
             .load(url)
-            .placeholder(android.R.drawable.ic_menu_gallery)
+            .placeholder(android.R.drawable.ic_menu_report_image)
             .error(android.R.drawable.ic_menu_report_image)
-            .fit().centerCrop()
+            .fit()
+            .centerCrop()
             .into(holder.image)
     }
 }
