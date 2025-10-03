@@ -9,7 +9,10 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.letsgetweddi.databinding.FragmentProfileBinding
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 class ProfileFragment : Fragment() {
 
@@ -17,7 +20,11 @@ class ProfileFragment : Fragment() {
     private lateinit var auth: FirebaseAuth
     private lateinit var db: FirebaseDatabase
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         binding = FragmentProfileBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -26,12 +33,16 @@ class ProfileFragment : Fragment() {
         auth = FirebaseAuth.getInstance()
         db = FirebaseDatabase.getInstance()
 
-        val uid = auth.currentUser?.uid ?: return
+        val uid = auth.currentUser?.uid
+        if (uid == null) {
+            Toast.makeText(context, "User not logged in.", Toast.LENGTH_SHORT).show()
+            return
+        }
 
-        // Read from both "users" (lowercase) and "Users" (uppercase) and both "fullName"/"name"
         fun fill(snapshot: DataSnapshot) {
             val name = snapshot.child("fullName").value?.toString()
                 ?: snapshot.child("name").value?.toString()
+                ?: snapshot.child("displayName").value?.toString()
                 ?: ""
             val email = snapshot.child("email").value?.toString()
                 ?: auth.currentUser?.email.orEmpty()
@@ -47,13 +58,21 @@ class ProfileFragment : Fragment() {
                     } else {
                         db.reference.child("Users").child(uid)
                             .addListenerForSingleValueEvent(object : ValueEventListener {
-                                override fun onDataChange(s2: DataSnapshot) { fill(s2) }
+                                override fun onDataChange(s2: DataSnapshot) {
+                                    fill(s2)
+                                }
+
                                 override fun onCancelled(error: DatabaseError) {
-                                    Toast.makeText(context, "Failed to load profile.", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        "Failed to load profile.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             })
                     }
                 }
+
                 override fun onCancelled(error: DatabaseError) {
                     Toast.makeText(context, "Failed to load profile.", Toast.LENGTH_SHORT).show()
                 }
@@ -63,8 +82,13 @@ class ProfileFragment : Fragment() {
             val email = auth.currentUser?.email
             if (email != null) {
                 auth.sendPasswordResetEmail(email)
-                    .addOnSuccessListener { Toast.makeText(context, "Password reset email sent.", Toast.LENGTH_SHORT).show() }
-                    .addOnFailureListener { Toast.makeText(context, "Failed to send email.", Toast.LENGTH_SHORT).show() }
+                    .addOnSuccessListener {
+                        Toast.makeText(context, "Password reset email sent.", Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                    .addOnFailureListener {
+                        Toast.makeText(context, "Failed to send email.", Toast.LENGTH_SHORT).show()
+                    }
             }
         }
 

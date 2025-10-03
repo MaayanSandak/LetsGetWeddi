@@ -34,7 +34,7 @@ class ProviderDetailsActivity : AppCompatActivity() {
     private var supplierId: String? = null
     private var supplier: Supplier? = null
     private var categoryId: String? = null
-    private val reviews: MutableList<Pair<String, String>> = mutableListOf()
+    private val reviews: MutableList<Review> = mutableListOf()
     private lateinit var reviewsAdapter: ReviewAdapter
 
     private var favRef: DatabaseReference? = null
@@ -48,7 +48,6 @@ class ProviderDetailsActivity : AppCompatActivity() {
         supplierId = intent.getStringExtra(EXTRA_SUPPLIER_ID)
         categoryId = supplier?.categoryId
 
-
         setupToolbar()
         setupLists()
         wireActions()
@@ -60,18 +59,52 @@ class ProviderDetailsActivity : AppCompatActivity() {
         mountInlineGalleryIfPossible()
     }
 
-    override fun onResume() {
-        super.onResume()
-        observeFavorite()
-        loadAvailabilityHint()
-        mountInlineGalleryIfPossible()
+    private fun loadReviewsMultiPath() {
+        val sId = supplierId ?: return
+        val paths = listOf(
+            FirebaseRefs.reviews(sId),
+            db.getReference("suppliers/$sId/reviews"),
+            db.getReference("Suppliers/$sId/reviews")
+        )
+
+        val bag = mutableListOf<Review>()
+        var remaining = paths.size
+
+        fun read(ref: DatabaseReference, done: () -> Unit) {
+            ref.get().addOnSuccessListener { snap ->
+                for (c in snap.children) {
+                    c.getValue(Review::class.java)?.let { bag += it }
+                }
+                done()
+            }.addOnFailureListener { done() }
+        }
+
+        paths.forEach { ref ->
+            read(ref) {
+                remaining -= 1
+                if (remaining == 0) {
+                    reviews.clear()
+                    reviews.addAll(bag)
+
+                    val rated = bag.filter { it.rating > 0f }
+                    val sum = rated.sumOf { it.rating.toDouble() }.toFloat()
+                    val count = rated.size
+
+                    binding.textRatingCount.text = count.toString()
+                    binding.textRatingAvg.text =
+                        if (count > 0) String.format("%.1f", sum / count) else "0.0"
+
+                    reviewsAdapter.notifyDataSetChanged()
+                }
+            }
+        }
     }
 
     private fun setupToolbar() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         binding.toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-        binding.toolbarNavBack.visibility = View.GONE
+        //toolbarNavBack.visibility = View.GONE
     }
 
     private fun setupLists() {
@@ -109,9 +142,8 @@ class ProviderDetailsActivity : AppCompatActivity() {
             val id = supplierId ?: return@setOnClickListener
             startActivity(
                 Intent(this, com.example.letsgetweddi.ui.gallery.GalleryViewActivity::class.java)
-                    .putExtra(ProviderDetailsActivity.EXTRA_SUPPLIER_ID, supplier?.id)
+                    .putExtra(EXTRA_SUPPLIER_ID, supplier?.id)
                     .putExtra("categoryId", supplier?.categoryId)
-
             )
         }
 
@@ -157,7 +189,6 @@ class ProviderDetailsActivity : AppCompatActivity() {
         binding.textLocation.text = s.location.orEmpty()
         binding.textDescription.text = s.description.orEmpty()
 
-        // COVER image: accept http/https or storage path; try common filenames as fallback
         loadSupplierCover(binding.imageHeader, s.id, s.imageUrl)
 
         RoleManager.isSupplier(this) { isSupplier, mySupplierId ->
@@ -211,95 +242,13 @@ class ProviderDetailsActivity : AppCompatActivity() {
         }
     }
 
-    /** Load reviews from multiple common paths to cover old/new schemas */
-    private fun loadReviewsMultiPath() {
-        val sId = supplierId ?: return
-        val listeners = mutableListOf<DatabaseReference>()
-
-        fun attach(ref: DatabaseReference) {
-            listeners += ref
-            ref.addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    recomputeReviews() // recompute from all paths
-                }
-
-                override fun onCancelled(error: DatabaseError) {}
-            })
-        }
-
-        attach(FirebaseRefs.reviews(sId))
-        attach(db.getReference("suppliers/$sId/reviews"))
-        attach(db.getReference("Suppliers/$sId/reviews"))
-
-        // one recompute that merges everything
-        fun collectFrom(ref: DatabaseReference, bag: MutableList<Review>) {
-            // single read (cached by Realtime DB)
-            ref.get().addOnSuccessListener { snap ->
-                for (c in snap.children) {
-                    c.getValue(Review::class.java)?.let { bag += it }
-                }
-                recomputeReviews()
-            }
-        }
-
-        val bag = mutableListOf<Review>()
-        collectFrom(FirebaseRefs.reviews(sId), bag)
-        collectFrom(db.getReference("suppliers/$sId/reviews"), bag)
-        collectFrom(db.getReference("Suppliers/$sId/reviews"), bag)
-    }
-
-    private fun recomputeReviews() {
-        val sId = supplierId ?: return
-        val paths = listOf(
-            FirebaseRefs.reviews(sId),
-            db.getReference("suppliers/$sId/reviews"),
-            db.getReference("Suppliers/$sId/reviews")
-        )
-        val bag = mutableListOf<Review>()
-
-        fun read(ref: DatabaseReference, done: () -> Unit) {
-            ref.get().addOnSuccessListener { snap ->
-                for (c in snap.children) {
-                    c.getValue(Review::class.java)?.let { bag += it }
-                }
-                done()
-            }.addOnFailureListener { done() }
-        }
-
-        var remaining = paths.size
-        paths.forEach { ref ->
-            read(ref) {
-                remaining -= 1
-                if (remaining == 0) {
-                    var sum = 0f
-                    var count = 0
-                    reviews.clear()
-                    for (r in bag) {
-                        if (!r.comment.isNullOrBlank()) {
-                            reviews.add((r.name ?: "") to r.comment!!)
-                        }
-                        if (r.rating > 0f) {
-                            sum += r.rating
-                            count += 1
-                        }
-                    }
-                    binding.textRatingCount.text = count.toString()
-                    binding.textRatingAvg.text =
-                        if (count > 0) String.format("%.1f", sum / count) else "0.0"
-                    reviewsAdapter.notifyDataSetChanged()
-                }
-            }
-        }
-    }
-
     private fun loadAvailabilityHint() {
         val sId = supplierId ?: return
         FirebaseRefs.availability(sId).get().addOnSuccessListener { snap ->
-            // Show hint only when there is NO availability data
-            binding.textAvailability.visibility =
-                if (snap.hasChildren()) View.GONE else View.VISIBLE
+            //binding.textAvailability.visibility =
+            if (snap.hasChildren()) View.GONE else View.VISIBLE
         }.addOnFailureListener {
-            binding.textAvailability.visibility = View.VISIBLE
+            // binding.textAvailability.visibility = View.VISIBLE
         }
     }
 
@@ -314,15 +263,12 @@ class ProviderDetailsActivity : AppCompatActivity() {
         }
     }
 
-
     override fun onDestroy() {
         super.onDestroy()
         favListener?.let { favRef?.removeEventListener(it) }
         favListener = null
         favRef = null
     }
-
-    // ---- helpers ----
 
     private fun loadSupplierCover(
         target: android.widget.ImageView,
@@ -343,7 +289,7 @@ class ProviderDetailsActivity : AppCompatActivity() {
             "suppliers/$id/cover.png",
             "suppliers/$id/cover.webp",
             "suppliers/$id/cover.avif",
-            "suppliers/$id/cover dj.avif" // your current demo file name
+            "suppliers/$id/cover dj.avif"
         ).filter { it.isNotBlank() }
 
         fun tryIndex(i: Int) {

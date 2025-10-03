@@ -1,38 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="@drawable/bg_gradient"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_gradient">
 
     <LinearLayout
-        android:orientation="vertical"
-        android:padding="12dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             style="@style/Weddi.Toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize">
-
-            <ImageButton
-                android:id="@+id/toolbarNavBack"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/back"
-                app:srcCompat="@drawable/ic_arrow_back" />
-        </com.google.android.material.appbar.MaterialToolbar>
+            android:layout_height="?attr/actionBarSize"
+            app:navigationContentDescription="@string/back"
+            app:navigationIcon="@drawable/ic_arrow_back" />
 
         <ImageView
             android:id="@+id/imageHeader"
             android:layout_width="match_parent"
             android:layout_height="190dp"
-            android:scaleType="centerCrop"
+            android:layout_marginTop="12dp"
             android:background="@drawable/rounded_card"
-            android:layout_marginTop="12dp" />
+            android:scaleType="centerCrop" />
 
         <TextView
             android:id="@+id/textName"
@@ -49,7 +42,6 @@
             android:layout_height="wrap_content"
             android:text="@string/location" />
 
-        <!-- Description -->
         <TextView
             android:id="@+id/textDescription"
             style="@style/Weddi.Body"
@@ -58,12 +50,11 @@
             android:layout_marginTop="8dp"
             android:text="" />
 
-        <!-- Action row: favorite + chat/whatsapp -->
         <LinearLayout
-            android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp">
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal">
 
             <ImageButton
                 android:id="@+id/buttonFav"
@@ -92,13 +83,12 @@
                 android:text="@string/open_chat" />
         </LinearLayout>
 
-        <!-- Supplier-only manage actions (hidden by default) -->
         <LinearLayout
             android:id="@+id/manageRow"
-            android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:orientation="horizontal"
             android:visibility="gone">
 
             <com.google.android.material.button.MaterialButton
@@ -128,21 +118,13 @@
                 android:text="@string/supplier_availability" />
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/textAvailability"
-            style="@style/Weddi.Body"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="@string/no_availability" />
-
-        <LinearLayout
             android:background="@drawable/rounded_card"
             android:orientation="vertical"
-            android:padding="12dp"
-            android:layout_marginTop="12dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:padding="12dp">
 
             <TextView
                 style="@style/Weddi.Label"
@@ -153,22 +135,24 @@
             <FrameLayout
                 android:id="@+id/galleryContainer"
                 android:layout_width="match_parent"
-                android:layout_height="160dp"
-                android:layout_marginTop="8dp" />
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:minHeight="160dp" />
         </LinearLayout>
 
         <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
             android:background="@drawable/rounded_card"
             android:orientation="vertical"
-            android:padding="12dp"
-            android:layout_marginTop="12dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:padding="12dp">
 
             <LinearLayout
-                android:orientation="horizontal"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
                 <TextView
                     style="@style/Weddi.Label"
@@ -176,29 +160,38 @@
                     android:layout_height="wrap_content"
                     android:text="@string/reviews" />
 
+                <RatingBar
+                    android:id="@+id/ratingBarSummary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:isIndicator="true"
+                    android:numStars="5"
+                    android:stepSize="0.5" />
+
                 <TextView
                     android:id="@+id/textRatingAvg"
                     style="@style/Weddi.Headline"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
-                    android:text="_0_0" />
+                    android:text="0.0" />
 
                 <TextView
                     android:id="@+id/textRatingCount"
                     style="@style/Weddi.Body"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="_0" />
+                    android:layout_marginStart="6dp"
+                    android:text="(0)" />
             </LinearLayout>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerReviews"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"
-                android:layout_marginTop="8dp" />
+                android:layout_marginTop="8dp"
+                android:nestedScrollingEnabled="false" />
         </LinearLayout>
 
     </LinearLayout>

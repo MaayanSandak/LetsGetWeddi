@@ -20,7 +20,6 @@ import com.google.firebase.database.FirebaseDatabase
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     private lateinit var binding: ActivityMainBinding
-
     private var role: String = "client"
     private var supplierId: String? = null
     private var suppliersExpanded = false
@@ -44,11 +43,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         toggle.syncState()
 
         binding.navView.setNavigationItemSelectedListener(this)
-
-        // Wire header action view after menu is available
         wireSuppliersHeaderAction()
-
-        // Apply initial visibility
         applySuppliersExpandedUI()
 
         val uid = auth.currentUser?.uid
@@ -76,15 +71,22 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             if (dbRole == "supplier" && !dbSupplierId.isNullOrBlank()) {
                 db.getReference("Suppliers").child(dbSupplierId).get().addOnSuccessListener { s2 ->
                     if (s2.exists()) {
-                        role = "supplier"; supplierId = dbSupplierId
+                        role = "supplier"
+                        supplierId = dbSupplierId
                     } else {
-                        role = "client"; supplierId = null
+                        role = "client"
+                        supplierId = null
                     }
-                    applyRoleUI(role); applySuppliersExpandedUI(); renderHeaderArrow()
+                    applyRoleUI(role)
+                    applySuppliersExpandedUI()
+                    renderHeaderArrow()
                 }
             } else {
-                role = "client"; supplierId = null
-                applyRoleUI(role); applySuppliersExpandedUI(); renderHeaderArrow()
+                role = "client"
+                supplierId = null
+                applyRoleUI(role)
+                applySuppliersExpandedUI()
+                renderHeaderArrow()
             }
         }
     }
@@ -93,7 +95,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         val handled = when (item.itemId) {
-            // Children handled normally (we keep drawer open until user selects)
             R.id.menu_home -> {
                 openHome(); true
             }
@@ -155,26 +156,32 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
 
             R.id.menu_supplier_gallery -> {
-                startIfExists("com.example.letsgetweddi.ui.gallery.GalleryManageActivity")
+                val intent = Intent(
+                    this,
+                    com.example.letsgetweddi.ui.gallery.GalleryManageActivity::class.java
+                )
+                intent.putExtra("supplierId", supplierId)
+                startActivity(intent); true
             }
 
             R.id.menu_supplier_availability -> {
-                startIfExists("com.example.letsgetweddi.ui.supplier.SupplierCalendarActivity")
+                val intent = Intent(
+                    this,
+                    com.example.letsgetweddi.ui.supplier.SupplierCalendarActivity::class.java
+                )
+                intent.putExtra("supplierId", supplierId)
+                startActivity(intent); true
             }
 
             R.id.menu_logout -> {
-                auth.signOut(); startActivity(
-                    Intent(
-                        this,
-                        LoginActivity::class.java
-                    )
-                ); finish(); true
+                auth.signOut()
+                startActivity(Intent(this, LoginActivity::class.java))
+                finish(); true
             }
 
             else -> false
         }
 
-        // Close only for real navigation (selecting a child), not for header toggle (header handled in wireSuppliersHeaderAction)
         if (handled) binding.drawerLayout.closeDrawer(binding.navView)
         return handled
     }
@@ -190,7 +197,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             applySuppliersExpandedUI()
             renderHeaderArrow()
         }
-        // Initial arrow state
         renderHeaderArrow()
     }
 
@@ -262,7 +268,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun startIfExists(className: String): Boolean {
         return try {
-            startActivity(Intent(this, Class.forName(className))); true
+            startActivity(Intent(this, Class.forName(className)))
+            true
         } catch (_: Throwable) {
             false
         }

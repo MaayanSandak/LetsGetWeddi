@@ -1,8 +1,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/Weddi.Card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="8dp"
-    android:background="@drawable/rounded_card"
     android:orientation="vertical"
     android:padding="12dp">
 
@@ -11,7 +11,25 @@
         style="@style/Weddi.Label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/anonymous" />
+        android:text="Anonymous" />
+
+    <TextView
+        android:id="@+id/textDate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="01 Jan 2024"
+        android:textColor="@color/md_theme_onSurfaceVariant"
+        android:textSize="12sp" />
+
+    <RatingBar
+        android:id="@+id/ratingBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:isIndicator="true"
+        android:numStars="5"
+        android:stepSize="0.5" />
 
     <TextView
         android:id="@+id/textContent"
@@ -19,5 +37,5 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:text="@string/great" />
+        android:text="Great service and friendly staff!" />
 </LinearLayout>

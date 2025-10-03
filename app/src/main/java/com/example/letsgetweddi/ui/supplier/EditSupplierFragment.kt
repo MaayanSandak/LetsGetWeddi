@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.example.letsgetweddi.R
 import com.example.letsgetweddi.utils.RoleManager
@@ -26,12 +27,17 @@ class EditSupplierFragment : Fragment() {
     private lateinit var editLocation: EditText
     private lateinit var editCategory: EditText
     private lateinit var editPhone: EditText
+    private lateinit var textReviews: TextView
 
     private var supplierId: String? = null
     private var canEdit: Boolean = false
     private var pickedImage: Uri? = null
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         val view = inflater.inflate(R.layout.fragment_edit_supplier, container, false)
 
         imageSupplier = view.findViewById(R.id.imageSupplier)
@@ -42,11 +48,13 @@ class EditSupplierFragment : Fragment() {
         editLocation = view.findViewById(R.id.editLocation)
         editCategory = view.findViewById(R.id.editCategory)
         editPhone = view.findViewById(R.id.editPhone)
+        textReviews = view.findViewById(R.id.textReviews)
 
         RoleManager.load(requireContext()) { _, sid ->
             supplierId = sid
             loadSupplierData()
             applyUiPermissions()
+            loadReviews()
         }
 
         buttonSelectImage.setOnClickListener {
@@ -62,6 +70,10 @@ class EditSupplierFragment : Fragment() {
         }
 
         return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
     }
 
     private fun applyUiPermissions() {
@@ -96,10 +108,24 @@ class EditSupplierFragment : Fragment() {
             editPhone.setText(phone)
 
             if (imageUrl.isNotEmpty()) {
-                Picasso.get().load(imageUrl).placeholder(R.drawable.rounded_card_placeholder).into(imageSupplier)
+                Picasso.get().load(imageUrl).placeholder(R.drawable.rounded_card_placeholder)
+                    .into(imageSupplier)
             } else {
                 imageSupplier.setImageResource(R.drawable.rounded_card_placeholder)
             }
+        }
+    }
+
+    private fun loadReviews() {
+        val id = supplierId ?: return
+        val ref = FirebaseDatabase.getInstance().getReference("Reviews").child(id)
+        ref.get().addOnSuccessListener { snapshot ->
+            val reviews = snapshot.children.mapNotNull {
+                com.example.letsgetweddi.model.Review.fromSnapshot(it)
+            }
+            val avg = reviews.mapNotNull { it.rating }.average().toFloat()
+            val count = reviews.size
+            textReviews.text = "Rating: %.1f (%d reviews)".format(avg, count)
         }
     }
 

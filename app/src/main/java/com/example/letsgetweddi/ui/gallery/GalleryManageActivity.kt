@@ -13,7 +13,8 @@ class GalleryManageActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_gallery_manage)
 
-        val supplierId = extractSupplierIdFromDeepLink(intent?.data)
+        val supplierId = intent?.getStringExtra("supplierId")
+            ?: extractSupplierIdFromDeepLink(intent?.data)
         if (supplierId.isNullOrBlank()) {
             finish()
             return

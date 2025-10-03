@@ -12,7 +12,9 @@ data class Supplier(
     val category: String? = null,
     val categoryId: String? = null,
     val categories: List<String>? = null,
-    val images: List<String>? = null
+    val images: List<String>? = null,
+    var rating: Float? = null,
+    var reviewCount: Int? = null
 ) {
     companion object {
         fun fromSnapshot(s: DataSnapshot): Supplier {
@@ -21,7 +23,6 @@ data class Supplier(
 
             val name = firstNonNullString(s, listOf("name", "title", "supplierName", "fullName"))
             val description = firstNonNullString(s, listOf("description", "details", "about"))
-
             val location = readLocationFlexible(s)
 
             var imageUrl = firstNonNullString(
@@ -67,7 +68,9 @@ data class Supplier(
                 category = category,
                 categoryId = categoryId,
                 categories = categories,
-                images = images
+                images = images,
+                rating = null,
+                reviewCount = null
             )
         }
 
@@ -97,8 +100,6 @@ data class Supplier(
 
                                 is List<*> -> value.filterNotNull()
                                     .forEach { out.add(it.toString()) }
-
-                                else -> {}
                             }
                         }
                     }

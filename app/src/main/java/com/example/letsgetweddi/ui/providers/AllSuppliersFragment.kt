@@ -9,12 +9,9 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.letsgetweddi.adapters.SupplierAdapter
 import com.example.letsgetweddi.databinding.FragmentAllSuppliersBinding
+import com.example.letsgetweddi.model.Review
 import com.example.letsgetweddi.model.Supplier
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.*
 
 class AllSuppliersFragment : Fragment() {
 
@@ -92,10 +89,24 @@ class AllSuppliersFragment : Fragment() {
         val ref = it.next()
         ref.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                val db = FirebaseDatabase.getInstance()
+                val pending = mutableListOf<Supplier>()
+
                 for (child in snapshot.children) {
                     val s = Supplier.fromSnapshot(child)
-                    if (s.id != null) all.add(s)
+                    if (s.id != null) {
+                        pending.add(s)
+                        db.getReference("Reviews").child(s.id!!).get()
+                            .addOnSuccessListener { snap ->
+                                val reviews = snap.children.mapNotNull { Review.fromSnapshot(it) }
+                                s.rating = reviews.map { it.rating }.average().toFloat()
+                                s.reviewCount = reviews.size
+                                adapter.notifyDataSetChanged()
+                            }
+                    }
                 }
+
+                all.addAll(pending)
                 fetchSequential(it, done)
             }
 

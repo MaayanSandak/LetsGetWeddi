@@ -1,55 +1,52 @@
 package com.example.letsgetweddi.ui.supplier
 
-import android.graphics.Typeface
 import android.os.Bundle
-import android.text.method.LinkMovementMethod
-import android.view.Gravity
+import android.view.ViewGroup
+import android.widget.CalendarView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.database.FirebaseDatabase
 
 class SupplierCalendarActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val supplierId = intent.getStringExtra("supplierId")
-            ?: intent.data?.lastPathSegment
-            ?: ""
+        val supplierId = intent.getStringExtra("supplierId") ?: ""
 
-        // Simple programmatic UI (no XML needed)
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
             setPadding(32, 48, 32, 48)
-            gravity = Gravity.CENTER_HORIZONTAL
         }
 
         val title = TextView(this).apply {
-            text = "Availability"
+            text = "Availability Calendar"
             textSize = 20f
-            setTypeface(typeface, Typeface.BOLD)
-            setPadding(0, 0, 0, 16)
         }
 
-        val info = TextView(this).apply {
-            text = if (supplierId.isNotEmpty()) {
-                "Calendar screen placeholder for supplierId:\n$supplierId\n\n" +
-                        "This placeholder prevents a crash while a full calendar screen is added."
-            } else {
-                "Calendar screen placeholder.\n\nNo supplierId provided."
-            }
-            textSize = 16f
-            gravity = Gravity.CENTER
-            movementMethod = LinkMovementMethod.getInstance()
-        }
+        val calendarView = CalendarView(this)
 
         root.addView(title)
-        root.addView(info)
+        root.addView(calendarView)
         setContentView(root)
-    }
 
-    override fun onBackPressed() {
-        super.onBackPressed()
-        finish()
+        if (supplierId.isNotEmpty()) {
+            val ref = FirebaseDatabase.getInstance().getReference("Availability").child(supplierId)
+            ref.get().addOnSuccessListener { snapshot ->
+                val availableDates = snapshot.children.mapNotNull {
+                    it.key?.toLongOrNull()
+                }
+                calendarView.setDate(
+                    availableDates.firstOrNull() ?: System.currentTimeMillis(),
+                    false,
+                    true
+                )
+            }
+        }
     }
 }

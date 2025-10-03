@@ -2,12 +2,17 @@ package com.example.letsgetweddi.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.RatingBar
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.letsgetweddi.R
+import com.example.letsgetweddi.model.Review
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class ReviewAdapter(
-    private val items: MutableList<Pair<String, String>>
+    private val items: MutableList<Review>
 ) : RecyclerView.Adapter<ReviewAdapter.VH>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
@@ -17,15 +22,23 @@ class ReviewAdapter(
     }
 
     override fun onBindViewHolder(holder: VH, position: Int) {
-        val (author, content) = items[position]
-        holder.author.text =
-            if (author.isBlank()) holder.itemView.context.getString(R.string.anonymous) else author
-        holder.content.text = content
+        val review = items[position]
+        val context = holder.itemView.context
+
+        holder.author.text = if (review.name.isNullOrBlank()) {
+            context.getString(R.string.anonymous)
+        } else {
+            review.name
+        }
+
+        holder.content.text = review.comment ?: ""
+        holder.ratingBar.rating = review.rating
+        holder.date.text = formatDate(review.timestamp)
     }
 
     override fun getItemCount(): Int = items.size
 
-    fun submitList(newItems: List<Pair<String, String>>) {
+    fun submitList(newItems: List<Review>) {
         items.clear()
         items.addAll(newItems)
         notifyDataSetChanged()
@@ -34,5 +47,12 @@ class ReviewAdapter(
     inner class VH(root: ViewGroup) : RecyclerView.ViewHolder(root) {
         val author: TextView = root.findViewById(R.id.textAuthor)
         val content: TextView = root.findViewById(R.id.textContent)
+        val ratingBar: RatingBar = root.findViewById(R.id.ratingBar)
+        val date: TextView = root.findViewById(R.id.textDate)
+    }
+
+    private fun formatDate(timestamp: Long): String {
+        val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+        return sdf.format(Date(timestamp))
     }
 }

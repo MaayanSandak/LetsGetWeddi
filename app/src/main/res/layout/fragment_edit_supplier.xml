@@ -69,5 +69,14 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text="@string/save" />
+
+        <TextView
+            android:id="@+id/textReviews"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Reviews will appear here"
+            android:textColor="@android:color/black"
+            android:textSize="16sp" />
     </LinearLayout>
 </ScrollView>

@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.RatingBar
 import android.widget.TextView
 import androidx.core.net.toUri
 import androidx.recyclerview.widget.RecyclerView
@@ -27,6 +28,8 @@ class SupplierAdapter(
         val name: TextView = v.findViewById(R.id.textName)
         val location: TextView = v.findViewById(R.id.textLocation)
         val subtitle: TextView = v.findViewById(R.id.textSubtitle)
+        val ratingBar: RatingBar = v.findViewById(R.id.ratingBar)
+        val reviewCount: TextView = v.findViewById(R.id.textReviewCount)
         val btnCall: ImageButton = v.findViewById(R.id.buttonCall)
         val btnChat: ImageButton = v.findViewById(R.id.buttonChat)
         val btnGallery: ImageButton = v.findViewById(R.id.buttonGallery)
@@ -49,6 +52,9 @@ class SupplierAdapter(
         holder.location.text = s.location ?: ""
         holder.subtitle.text =
             s.description ?: holder.itemView.context.getString(R.string.see_details)
+
+        holder.ratingBar.rating = s.rating ?: 0f
+        holder.reviewCount.text = "(${s.reviewCount ?: 0})"
 
         val placeholder = android.R.drawable.ic_menu_report_image
         val url = (s.imageUrl ?: "").trim()
