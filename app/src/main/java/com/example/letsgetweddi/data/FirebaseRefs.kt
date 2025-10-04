@@ -15,7 +15,9 @@ object FirebaseRefs {
     fun favorite(userId: String, supplierId: String): DatabaseReference =
         ref(DbPaths.favoriteOf(userId, supplierId))
 
-    fun reviews(supplierId: String): DatabaseReference = ref(DbPaths.reviewsOf(supplierId))
+    fun reviews(supplierId: String): DatabaseReference =
+        db.getReference(DbPaths.reviewsOf(supplierId))
+
     fun availability(supplierId: String): DatabaseReference =
         ref(DbPaths.availabilityOf(supplierId))
 }

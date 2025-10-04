@@ -80,6 +80,24 @@ class SuppliersListFragment : Fragment() {
             Log.d(TAG, "loadAll -> shown=${shown.size}")
         }
     }
+    
+    private fun attachReviewsToSupplier(s: Supplier, after: (() -> Unit)? = null) {
+        val id = s.id ?: return after?.invoke() ?: Unit
+        FirebaseDatabase.getInstance().getReference("reviews").child(id)
+            .get()
+            .addOnSuccessListener { snap ->
+                val reviews = snap.children.mapNotNull {
+                    com.example.letsgetweddi.model.Review.fromSnapshot(it)
+                        ?: it.getValue(com.example.letsgetweddi.model.Review::class.java)
+                }
+                s.rating = reviews.map { it.rating }.average().toFloat()
+                s.reviewCount = reviews.size
+                adapter.notifyDataSetChanged()
+                after?.invoke()
+            }
+            .addOnFailureListener { after?.invoke() }
+    }
+
 
     private fun loadByCategoryOrId(categoryArg: String) {
         val db = FirebaseDatabase.getInstance()
@@ -151,6 +169,7 @@ class SuppliersListFragment : Fragment() {
                         val id = s.id
                         if (id != null && !all.containsKey(id)) {
                             all[id] = s
+                            attachReviewsToSupplier(s)
                             added++
                         }
                     }
@@ -187,6 +206,7 @@ class SuppliersListFragment : Fragment() {
                         val id = s.id
                         if (id != null && !all.containsKey(id)) {
                             all[id] = s
+                            attachReviewsToSupplier(s)
                             added++
                         }
                     }

@@ -61,8 +61,10 @@ class ProviderDetailsActivity : AppCompatActivity() {
 
     private fun loadReviewsMultiPath() {
         val sId = supplierId ?: return
+
         val paths = listOf(
-            FirebaseRefs.reviews(sId),
+            FirebaseRefs.reviews(sId),           // "reviews/<supplierId>"
+            db.getReference("reviews/$sId"),
             db.getReference("suppliers/$sId/reviews"),
             db.getReference("Suppliers/$sId/reviews")
         )
@@ -70,35 +72,43 @@ class ProviderDetailsActivity : AppCompatActivity() {
         val bag = mutableListOf<Review>()
         var remaining = paths.size
 
-        fun read(ref: DatabaseReference, done: () -> Unit) {
-            ref.get().addOnSuccessListener { snap ->
-                for (c in snap.children) {
-                    c.getValue(Review::class.java)?.let { bag += it }
+        fun finish() {
+            reviews.clear()
+            reviews.addAll(bag)
+
+            val rated = bag.filter { it.rating > 0f }
+            val sum = rated.sumOf { it.rating.toDouble() }.toFloat()
+            val count = rated.size
+            val avg = if (count > 0) sum / count else 0f
+
+            binding.textRatingCount.text = "($count)"
+            binding.textRatingAvg.text = String.format("%.1f", avg)
+            // IMPORTANT: match your XML id → ratingBarSummary
+            binding.ratingBarSummary.rating = avg
+
+            reviewsAdapter.notifyDataSetChanged()
+        }
+
+        fun readOnce(ref: DatabaseReference, after: () -> Unit) {
+            ref.get()
+                .addOnSuccessListener { snap ->
+                    for (c in snap.children) {
+                        Review.fromSnapshot(c)?.let { bag += it }
+                            ?: c.getValue(Review::class.java)?.let { bag += it }
+                    }
+                    after()
                 }
-                done()
-            }.addOnFailureListener { done() }
+                .addOnFailureListener { after() }
         }
 
         paths.forEach { ref ->
-            read(ref) {
+            readOnce(ref) {
                 remaining -= 1
-                if (remaining == 0) {
-                    reviews.clear()
-                    reviews.addAll(bag)
-
-                    val rated = bag.filter { it.rating > 0f }
-                    val sum = rated.sumOf { it.rating.toDouble() }.toFloat()
-                    val count = rated.size
-
-                    binding.textRatingCount.text = count.toString()
-                    binding.textRatingAvg.text =
-                        if (count > 0) String.format("%.1f", sum / count) else "0.0"
-
-                    reviewsAdapter.notifyDataSetChanged()
-                }
+                if (remaining == 0) finish()
             }
         }
     }
+
 
     private fun setupToolbar() {
         setSupportActionBar(binding.toolbar)
@@ -189,6 +199,9 @@ class ProviderDetailsActivity : AppCompatActivity() {
         binding.textLocation.text = s.location.orEmpty()
         binding.textDescription.text = s.description.orEmpty()
 
+        // ensure categoryId is set before mounting the gallery
+        categoryId = s.categoryId
+
         loadSupplierCover(binding.imageHeader, s.id, s.imageUrl)
 
         RoleManager.isSupplier(this) { isSupplier, mySupplierId ->
@@ -245,12 +258,13 @@ class ProviderDetailsActivity : AppCompatActivity() {
     private fun loadAvailabilityHint() {
         val sId = supplierId ?: return
         FirebaseRefs.availability(sId).get().addOnSuccessListener { snap ->
-            //binding.textAvailability.visibility =
-            if (snap.hasChildren()) View.GONE else View.VISIBLE
+            binding.textAvailability.visibility =
+                if (snap.hasChildren()) View.GONE else View.VISIBLE
         }.addOnFailureListener {
-            // binding.textAvailability.visibility = View.VISIBLE
+            binding.textAvailability.visibility = View.VISIBLE
         }
     }
+
 
     private fun mountInlineGalleryIfPossible() {
         val sid = supplierId ?: return

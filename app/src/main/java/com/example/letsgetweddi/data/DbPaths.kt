@@ -4,7 +4,7 @@ object DbPaths {
     const val USERS = "Users"
     const val SUPPLIERS = "Suppliers"
     const val FAVORITES = "Favorites"
-    const val REVIEWS = "REVIEWS"
+    const val REVIEWS = "reviews"
     const val SUPPLIERS_AVAILABILITY = "SuppliersAvailability"
     const val CHATS = "Chats"
 

@@ -52,7 +52,9 @@ class ReviewAdapter(
     }
 
     private fun formatDate(timestamp: Long): String {
+        if (timestamp <= 0L) return ""
         val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
         return sdf.format(Date(timestamp))
     }
+
 }

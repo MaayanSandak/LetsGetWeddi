@@ -11,7 +11,11 @@ import com.example.letsgetweddi.adapters.SupplierAdapter
 import com.example.letsgetweddi.databinding.FragmentAllSuppliersBinding
 import com.example.letsgetweddi.model.Review
 import com.example.letsgetweddi.model.Supplier
-import com.google.firebase.database.*
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 class AllSuppliersFragment : Fragment() {
 
@@ -96,9 +100,15 @@ class AllSuppliersFragment : Fragment() {
                     val s = Supplier.fromSnapshot(child)
                     if (s.id != null) {
                         pending.add(s)
-                        db.getReference("Reviews").child(s.id!!).get()
+
+                        // IMPORTANT: lowercase "reviews" to match your RTDB
+                        db.getReference("reviews").child(s.id!!)
+                            .get()
                             .addOnSuccessListener { snap ->
-                                val reviews = snap.children.mapNotNull { Review.fromSnapshot(it) }
+                                // robust parsing
+                                val reviews = snap.children.mapNotNull {
+                                    Review.fromSnapshot(it) ?: it.getValue(Review::class.java)
+                                }
                                 s.rating = reviews.map { it.rating }.average().toFloat()
                                 s.reviewCount = reviews.size
                                 adapter.notifyDataSetChanged()

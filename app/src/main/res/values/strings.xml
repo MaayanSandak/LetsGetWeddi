@@ -138,4 +138,10 @@
     <string name="availability_title">Availability</string>
     <string name="availability_empty">No availability yet</string>
 
+    <string name="availability_hint_no_dates">No available dates yet</string>
+    <string name="availability_hint_error">Availability info unavailable</string>
+    <string name="rating_avg">%1$.1f</string>
+    <string name="reviews_count">(%1$d)</string>
+
+
 </resources>

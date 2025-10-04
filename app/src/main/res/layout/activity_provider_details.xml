@@ -99,6 +99,15 @@
                 android:layout_weight="1"
                 android:text="@string/edit_supplier" />
 
+            <TextView
+                android:id="@+id/textAvailability"
+                style="@style/Weddi.Body"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/availability_hint_no_dates"
+                android:visibility="gone" />
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonManageGallery"
                 style="@style/Weddi.Button"
