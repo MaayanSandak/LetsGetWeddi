@@ -1,7 +1,6 @@
 package com.example.letsgetweddi.ui.gallery
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,6 +8,8 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.letsgetweddi.databinding.FragmentGalleryBinding
+import com.example.letsgetweddi.ui.ProviderDetailsActivity
+import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
 
 class GalleryFragment : Fragment() {
@@ -47,43 +48,92 @@ class GalleryFragment : Fragment() {
             val id = supplierId
             val category = categoryId
             if (!id.isNullOrBlank() && !category.isNullOrBlank()) {
-                val uri = Uri.parse("letsgetweddi://gallery/$id")
                 startActivity(
-                    Intent(Intent.ACTION_VIEW, uri)
-                        .putExtra("supplierId", id)
+                    Intent(requireContext(), GalleryViewActivity::class.java)
+                        .putExtra(ProviderDetailsActivity.EXTRA_SUPPLIER_ID, id)
                         .putExtra("categoryId", category)
                 )
             }
         }
 
-        if (!supplierId.isNullOrBlank()) {
-            loadFromStorage(supplierId!!)
-        } else {
+        val id = supplierId
+        if (id.isNullOrBlank()) {
             showEmpty(true)
+        } else {
+            loadFromDatabaseOrStorage(id)
         }
     }
 
-    private fun loadFromStorage(supplierId: String) {
+    private fun loadFromDatabaseOrStorage(id: String) {
         images.clear()
         adapter.notifyDataSetChanged()
         showEmpty(false)
 
-        val root = FirebaseStorage.getInstance().reference
-            .child("suppliers/$supplierId/gallery")
+        val db = FirebaseDatabase.getInstance()
+        db.getReference("suppliers/$id").get()
+            .addOnSuccessListener { snap ->
+                val list = mutableListOf<String>()
+                val node = snap.child("gallery")
+                if (node.exists()) {
+                    node.children.forEach { c ->
+                        c.getValue(String::class.java)?.let { list.add(it) }
+                    }
+                }
+                if (list.isNotEmpty()) {
+                    loadGsList(list)
+                } else {
+                    listFolder(id)
+                }
+            }
+            .addOnFailureListener { listFolder(id) }
+    }
 
-        root.listAll()
-            .addOnSuccessListener { result ->
-                result.items.forEach { ref ->
-                    ref.downloadUrl
-                        .addOnSuccessListener { uri ->
-                            images.add(uri.toString())
-                        }
-                        .addOnCompleteListener {
+    private fun loadGsList(gsList: List<String>) {
+        val storage = FirebaseStorage.getInstance()
+        var remaining = gsList.size
+        gsList.forEach { gs ->
+            try {
+                val ref = storage.getReferenceFromUrl(gs)
+                ref.downloadUrl
+                    .addOnSuccessListener { uri -> images.add(uri.toString()) }
+                    .addOnCompleteListener {
+                        remaining -= 1
+                        if (remaining == 0) {
                             adapter.notifyDataSetChanged()
+                            showEmpty(images.isEmpty())
+                        }
+                    }
+            } catch (_: Throwable) {
+                remaining -= 1
+                if (remaining == 0) {
+                    adapter.notifyDataSetChanged()
+                    showEmpty(images.isEmpty())
+                }
+            }
+        }
+    }
+
+    private fun listFolder(id: String) {
+        val ref = FirebaseStorage.getInstance().reference
+            .child("suppliers/$id/gallery")
+        ref.listAll()
+            .addOnSuccessListener { result ->
+                if (result.items.isEmpty()) {
+                    showEmpty(true); return@addOnSuccessListener
+                }
+                var remaining = result.items.size
+                result.items.forEach { item ->
+                    item.downloadUrl
+                        .addOnSuccessListener { uri -> images.add(uri.toString()) }
+                        .addOnCompleteListener {
+                            remaining -= 1
+                            if (remaining == 0) {
+                                adapter.notifyDataSetChanged()
+                                showEmpty(images.isEmpty())
+                            }
                         }
                 }
             }
-
             .addOnFailureListener { showEmpty(true) }
     }
 

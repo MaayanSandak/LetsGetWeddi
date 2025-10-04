@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.letsgetweddi.R
 import com.example.letsgetweddi.data.FirebaseRefs
 import com.example.letsgetweddi.model.Supplier
+import com.example.letsgetweddi.ui.ProviderDetailsActivity
 import com.example.letsgetweddi.ui.gallery.GalleryViewActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.storage.FirebaseStorage
@@ -117,7 +118,8 @@ class SupplierAdapter(
                 val ctx = it.context
                 ctx.startActivity(
                     Intent(ctx, GalleryViewActivity::class.java)
-                        .putExtra("supplierId", s.id)
+                        .putExtra(ProviderDetailsActivity.EXTRA_SUPPLIER_ID, s.id)
+                        .putExtra("categoryId", s.categoryId ?: "")
                 )
             }
         }
@@ -129,13 +131,12 @@ class SupplierAdapter(
                     Intent(
                         ctx,
                         com.example.letsgetweddi.ui.supplier.AvailabilityActivity::class.java
-                    )
-                        .putExtra("supplierId", s.id)
+                    ).putExtra("supplierId", s.id)
                 )
             }
         }
 
-        holder.btnFav.setOnClickListener { v ->
+        holder.btnFav.setOnClickListener {
             val user = FirebaseAuth.getInstance().currentUser ?: return@setOnClickListener
             val supId = s.id ?: return@setOnClickListener
             val ref = FirebaseRefs.favorite(user.uid, supId)

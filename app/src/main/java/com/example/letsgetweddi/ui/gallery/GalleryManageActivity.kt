@@ -4,14 +4,13 @@ import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.example.letsgetweddi.R
 import com.example.letsgetweddi.utils.UiPermissions
 
 class GalleryManageActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_gallery_manage)
+
 
         val supplierId = intent?.getStringExtra("supplierId")
             ?: extractSupplierIdFromDeepLink(intent?.data)

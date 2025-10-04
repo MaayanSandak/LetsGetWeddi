@@ -147,7 +147,6 @@ class ProviderDetailsActivity : AppCompatActivity() {
         binding.textLocation.text = s.location.orEmpty()
         binding.textDescription.text = s.description.orEmpty()
 
-        // ensure categoryId is set so gallery can mount
         categoryId = s.categoryId
 
         loadSupplierCover(binding.imageHeader, s.id, s.imageUrl)
@@ -206,8 +205,8 @@ class ProviderDetailsActivity : AppCompatActivity() {
     private fun loadAvailabilityHint() {
         val sId = supplierId ?: return
         FirebaseRefs.availability(sId).get()
-            .addOnSuccessListener { /* optional hint UI - none here */ }
-            .addOnFailureListener { /* optional */ }
+            .addOnSuccessListener { }
+            .addOnFailureListener { }
     }
 
     private fun mountInlineGalleryIfPossible() {
@@ -232,47 +231,106 @@ class ProviderDetailsActivity : AppCompatActivity() {
         sId: String?,
         urlOrPath: String?
     ) {
-        val v = (urlOrPath ?: "").trim()
-        if (v.startsWith("http", true)) {
-            Picasso.get().load(v).fit().centerCrop().into(target)
+        val storage = FirebaseStorage.getInstance()
+        val value = (urlOrPath ?: "").trim()
+
+        fun loadPicassoUrl(u: String) {
+            Picasso.get().load(u).fit().centerCrop().into(target)
+        }
+
+        fun tryGalleryFallback(id: String) {
+            storage.reference.child("suppliers/$id/gallery")
+                .list(1)
+                .addOnSuccessListener { res ->
+                    if (res.items.isNotEmpty()) {
+                        res.items.first().downloadUrl
+                            .addOnSuccessListener { uri -> loadPicassoUrl(uri.toString()) }
+                            .addOnFailureListener { target.setImageDrawable(null) }
+                    } else {
+                        target.setImageDrawable(null)
+                    }
+                }
+                .addOnFailureListener { target.setImageDrawable(null) }
+        }
+
+        fun tryCoverCandidates(id: String) {
+            val candidates = listOf(
+                value,
+                "suppliers/$id/cover.jpg",
+                "suppliers/$id/cover.jpeg",
+                "suppliers/$id/cover.png",
+                "suppliers/$id/cover.webp",
+                "suppliers/$id/cover.avif",
+                "suppliers/$id/cover dj.avif"
+            ).filter { it.isNotBlank() }
+
+            fun tryIndex(i: Int) {
+                if (i >= candidates.size) {
+                    tryGalleryFallback(id)
+                    return
+                }
+                val path = candidates[i]
+                when {
+                    path.startsWith("gs://") -> {
+                        try {
+                            storage.getReferenceFromUrl(path)
+                                .downloadUrl
+                                .addOnSuccessListener { uri -> loadPicassoUrl(uri.toString()) }
+                                .addOnFailureListener { tryIndex(i + 1) }
+                        } catch (_: Exception) {
+                            tryIndex(i + 1)
+                        }
+                    }
+
+                    path.startsWith("http", true) -> {
+                        loadPicassoUrl(path)
+                    }
+
+                    else -> {
+                        storage.reference.child(path).downloadUrl
+                            .addOnSuccessListener { uri -> loadPicassoUrl(uri.toString()) }
+                            .addOnFailureListener { tryIndex(i + 1) }
+                    }
+                }
+            }
+            tryIndex(0)
+        }
+
+        if (value.startsWith("http", true)) {
+            loadPicassoUrl(value)
             return
         }
-        val id = sId ?: return
-        val storage = FirebaseStorage.getInstance().reference
-        val candidates = listOf(
-            v,
-            "suppliers/$id/cover.jpg",
-            "suppliers/$id/cover.jpeg",
-            "suppliers/$id/cover.png",
-            "suppliers/$id/cover.webp",
-            "suppliers/$id/cover.avif",
-            "suppliers/$id/cover dj.avif"
-        ).filter { it.isNotBlank() }
-
-        fun tryIndex(i: Int) {
-            if (i >= candidates.size) {
-                target.setImageDrawable(null)
-                return
-            }
-            val path = candidates[i]
-            if (path.startsWith("http", true)) {
-                Picasso.get().load(path).fit().centerCrop().into(target)
-            } else {
-                storage.child(path).downloadUrl
-                    .addOnSuccessListener { uri ->
-                        Picasso.get().load(uri).fit().centerCrop().into(target)
+        if (value.startsWith("gs://")) {
+            try {
+                storage.getReferenceFromUrl(value)
+                    .downloadUrl
+                    .addOnSuccessListener { uri -> loadPicassoUrl(uri.toString()) }
+                    .addOnFailureListener {
+                        val id = sId ?: return@addOnFailureListener target.setImageDrawable(null)
+                        tryCoverCandidates(id)
                     }
-                    .addOnFailureListener { tryIndex(i + 1) }
+            } catch (_: Exception) {
+                val id = sId ?: run { target.setImageDrawable(null); return }
+                tryCoverCandidates(id)
             }
+            return
         }
-        tryIndex(0)
+
+        val id = sId ?: run { target.setImageDrawable(null); return }
+        if (value.isNotBlank()) {
+            storage.reference.child(value).downloadUrl
+                .addOnSuccessListener { uri -> loadPicassoUrl(uri.toString()) }
+                .addOnFailureListener { tryCoverCandidates(id) }
+        } else {
+            tryCoverCandidates(id)
+        }
     }
 
     private fun loadReviewsMultiPath() {
         val sId = supplierId ?: return
 
         val paths = listOf(
-            FirebaseRefs.reviews(sId),            // reviews/<supplierId>
+            FirebaseRefs.reviews(sId),
             db.getReference("reviews/$sId"),
             db.getReference("suppliers/$sId/reviews"),
             db.getReference("Suppliers/$sId/reviews")
@@ -356,13 +414,9 @@ class ProviderDetailsActivity : AppCompatActivity() {
         }
 
         allUids.forEach { uid ->
-            // Try lowercase "users" first (your DB), then fallback to "Users"
             db.getReference("users/$uid").get()
                 .addOnSuccessListener { snap ->
-                    val nm = takeName(snap) ?: run {
-                        // fallback to "Users"
-                        null
-                    }
+                    val nm = takeName(snap) ?: run { null }
                     if (nm != null) {
                         names[uid] = nm
                         doneOne()

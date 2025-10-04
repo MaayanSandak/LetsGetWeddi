@@ -1,12 +1,13 @@
 package com.example.letsgetweddi.ui.gallery
 
+import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.letsgetweddi.databinding.ActivityGalleryViewBinding
 import com.example.letsgetweddi.ui.ProviderDetailsActivity
+import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
 
 class GalleryViewActivity : AppCompatActivity() {
@@ -30,44 +31,90 @@ class GalleryViewActivity : AppCompatActivity() {
         binding.recycler.layoutManager = GridLayoutManager(this, 2)
         binding.recycler.adapter = adapter
 
-        supplierId = intent.getStringExtra(ProviderDetailsActivity.EXTRA_SUPPLIER_ID) ?: ""
-        val categoryId = intent.getStringExtra("categoryId") ?: ""
+        supplierId = intent.getStringExtra(ProviderDetailsActivity.EXTRA_SUPPLIER_ID)
+            ?: intent.getStringExtra("supplierId")
+                    ?: extractSupplierIdFromDeepLink(intent.data)
+                    ?: ""
+
+        val categoryId = intent.getStringExtra("categoryId")
+            ?: intent.data?.getQueryParameter("categoryId")
+            ?: ""
 
         if (supplierId.isBlank() || categoryId.isBlank()) {
             Toast.makeText(this, "Missing supplier or category", Toast.LENGTH_SHORT).show()
-            finish()
-            return
+            finish(); return
         }
 
-        loadFromStorage(supplierId)
+        loadFromDatabaseOrStorage(supplierId)
     }
 
-    private fun loadFromStorage(supplierId: String) {
+    private fun extractSupplierIdFromDeepLink(data: Uri?): String? {
+        if (data == null) return null
+        val parts = data.pathSegments ?: return null
+        return parts.lastOrNull()
+    }
+
+    private fun loadFromDatabaseOrStorage(id: String) {
         images.clear()
         adapter.notifyDataSetChanged()
         showEmpty(false)
 
-        val root = FirebaseStorage.getInstance().reference
-            .child("suppliers/$supplierId/gallery")
+        val db = FirebaseDatabase.getInstance()
+        db.getReference("suppliers/$id").get()
+            .addOnSuccessListener { snap ->
+                val list = mutableListOf<String>()
+                val node = snap.child("gallery")
+                if (node.exists()) {
+                    node.children.forEach { c ->
+                        c.getValue(String::class.java)?.let { list.add(it) }
+                    }
+                }
+                if (list.isNotEmpty()) {
+                    loadGsList(list)
+                } else {
+                    listFolder(id)
+                }
+            }
+            .addOnFailureListener { listFolder(id) }
+    }
 
-        Log.d("GalleryDebug", "Loading from: suppliers/$supplierId/gallery")
+    private fun loadGsList(gsList: List<String>) {
+        val storage = FirebaseStorage.getInstance()
+        var remaining = gsList.size
+        gsList.forEach { gs ->
+            try {
+                val ref = storage.getReferenceFromUrl(gs)
+                ref.downloadUrl
+                    .addOnSuccessListener { uri -> images.add(uri.toString()) }
+                    .addOnCompleteListener {
+                        remaining -= 1
+                        if (remaining == 0) {
+                            adapter.notifyDataSetChanged()
+                            showEmpty(images.isEmpty())
+                        }
+                    }
+            } catch (_: Throwable) {
+                remaining -= 1
+                if (remaining == 0) {
+                    adapter.notifyDataSetChanged()
+                    showEmpty(images.isEmpty())
+                }
+            }
+        }
+    }
 
-        root.listAll()
+    private fun listFolder(id: String) {
+        val ref = FirebaseStorage.getInstance().reference
+            .child("suppliers/$id/gallery")
+        ref.listAll()
             .addOnSuccessListener { result ->
                 if (result.items.isEmpty()) {
-                    showEmpty(true)
-                    return@addOnSuccessListener
+                    showEmpty(true); return@addOnSuccessListener
                 }
-
                 var remaining = result.items.size
-                result.items.forEach { ref ->
-                    ref.downloadUrl
-                        .addOnSuccessListener { uri ->
-                            images.add(uri.toString())
-                        }
-                        .addOnFailureListener { error ->
-                            Log.e("DownloadError", "Failed for ${ref.name}: ${error.message}")
-                        }
+                result.items.forEach { item ->
+                    item.downloadUrl
+                        .addOnSuccessListener { uri -> images.add(uri.toString()) }
                         .addOnCompleteListener {
                             remaining -= 1
                             if (remaining == 0) {
@@ -77,10 +124,7 @@ class GalleryViewActivity : AppCompatActivity() {
                         }
                 }
             }
-            .addOnFailureListener {
-                Log.e("GalleryError", "Failed to list images: ${it.message}")
-                showEmpty(true)
-            }
+            .addOnFailureListener { showEmpty(true) }
     }
 
     private fun showEmpty(empty: Boolean) {
