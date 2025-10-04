@@ -59,62 +59,10 @@ class ProviderDetailsActivity : AppCompatActivity() {
         mountInlineGalleryIfPossible()
     }
 
-    private fun loadReviewsMultiPath() {
-        val sId = supplierId ?: return
-
-        val paths = listOf(
-            FirebaseRefs.reviews(sId),           // "reviews/<supplierId>"
-            db.getReference("reviews/$sId"),
-            db.getReference("suppliers/$sId/reviews"),
-            db.getReference("Suppliers/$sId/reviews")
-        )
-
-        val bag = mutableListOf<Review>()
-        var remaining = paths.size
-
-        fun finish() {
-            reviews.clear()
-            reviews.addAll(bag)
-
-            val rated = bag.filter { it.rating > 0f }
-            val sum = rated.sumOf { it.rating.toDouble() }.toFloat()
-            val count = rated.size
-            val avg = if (count > 0) sum / count else 0f
-
-            binding.textRatingCount.text = "($count)"
-            binding.textRatingAvg.text = String.format("%.1f", avg)
-            // IMPORTANT: match your XML id → ratingBarSummary
-            binding.ratingBarSummary.rating = avg
-
-            reviewsAdapter.notifyDataSetChanged()
-        }
-
-        fun readOnce(ref: DatabaseReference, after: () -> Unit) {
-            ref.get()
-                .addOnSuccessListener { snap ->
-                    for (c in snap.children) {
-                        Review.fromSnapshot(c)?.let { bag += it }
-                            ?: c.getValue(Review::class.java)?.let { bag += it }
-                    }
-                    after()
-                }
-                .addOnFailureListener { after() }
-        }
-
-        paths.forEach { ref ->
-            readOnce(ref) {
-                remaining -= 1
-                if (remaining == 0) finish()
-            }
-        }
-    }
-
-
     private fun setupToolbar() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         binding.toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-        //toolbarNavBack.visibility = View.GONE
     }
 
     private fun setupLists() {
@@ -199,7 +147,7 @@ class ProviderDetailsActivity : AppCompatActivity() {
         binding.textLocation.text = s.location.orEmpty()
         binding.textDescription.text = s.description.orEmpty()
 
-        // ensure categoryId is set before mounting the gallery
+        // ensure categoryId is set so gallery can mount
         categoryId = s.categoryId
 
         loadSupplierCover(binding.imageHeader, s.id, s.imageUrl)
@@ -257,19 +205,14 @@ class ProviderDetailsActivity : AppCompatActivity() {
 
     private fun loadAvailabilityHint() {
         val sId = supplierId ?: return
-        FirebaseRefs.availability(sId).get().addOnSuccessListener { snap ->
-            binding.textAvailability.visibility =
-                if (snap.hasChildren()) View.GONE else View.VISIBLE
-        }.addOnFailureListener {
-            binding.textAvailability.visibility = View.VISIBLE
-        }
+        FirebaseRefs.availability(sId).get()
+            .addOnSuccessListener { /* optional hint UI - none here */ }
+            .addOnFailureListener { /* optional */ }
     }
-
 
     private fun mountInlineGalleryIfPossible() {
         val sid = supplierId ?: return
         val cid = categoryId ?: return
-
         if (supportFragmentManager.findFragmentById(R.id.galleryContainer) == null) {
             supportFragmentManager.beginTransaction()
                 .replace(R.id.galleryContainer, GalleryFragment.newInstance(sid, cid))
@@ -323,6 +266,124 @@ class ProviderDetailsActivity : AppCompatActivity() {
             }
         }
         tryIndex(0)
+    }
+
+    private fun loadReviewsMultiPath() {
+        val sId = supplierId ?: return
+
+        val paths = listOf(
+            FirebaseRefs.reviews(sId),            // reviews/<supplierId>
+            db.getReference("reviews/$sId"),
+            db.getReference("suppliers/$sId/reviews"),
+            db.getReference("Suppliers/$sId/reviews")
+        )
+
+        val bag = mutableListOf<Review>()
+        var remaining = paths.size
+
+        fun finish() {
+            reviews.clear()
+            reviews.addAll(bag)
+
+            val rated = bag.filter { it.rating > 0f }
+            val sum = rated.sumOf { it.rating.toDouble() }.toFloat()
+            val count = rated.size
+            val avg = if (count > 0) sum / count else 0f
+
+            binding.textRatingCount.text = "($count)"
+            binding.textRatingAvg.text = String.format("%.1f", avg)
+            binding.ratingBarSummary.rating = avg
+
+            resolveReviewerNames(reviews) {
+                reviewsAdapter.notifyDataSetChanged()
+            }
+        }
+
+        fun readOnce(ref: DatabaseReference, after: () -> Unit) {
+            ref.get()
+                .addOnSuccessListener { snap ->
+                    for (c in snap.children) {
+                        Review.fromSnapshot(c)?.let { bag += it }
+                            ?: c.getValue(Review::class.java)?.let { bag += it }
+                    }
+                    after()
+                }
+                .addOnFailureListener { after() }
+        }
+
+        paths.forEach { ref ->
+            readOnce(ref) {
+                remaining -= 1
+                if (remaining == 0) finish()
+            }
+        }
+    }
+
+    private fun resolveReviewerNames(items: MutableList<Review>, onDone: () -> Unit) {
+        val allUids = items.mapNotNull { it.userId?.trim() }.filter { it.isNotEmpty() }.distinct()
+        if (allUids.isEmpty()) {
+            onDone(); return
+        }
+
+        var remaining = allUids.size
+        val names = HashMap<String, String>()
+
+        fun takeName(node: DataSnapshot): String? {
+            val candidates = listOf("displayName", "name", "fullName", "firstName", "lastName")
+            for (k in candidates) {
+                val v = node.child(k).value
+                if (v is String && v.isNotBlank()) return v
+            }
+            val first = node.child("firstName").getValue(String::class.java).orEmpty()
+            val last = node.child("lastName").getValue(String::class.java).orEmpty()
+            val both = listOf(first, last).filter { it.isNotBlank() }.joinToString(" ")
+            return both.ifBlank { null }
+        }
+
+        fun doneOne() {
+            remaining -= 1
+            if (remaining == 0) {
+                items.forEachIndexed { idx, r ->
+                    val uid = r.userId
+                    if (!uid.isNullOrBlank() && r.name.isNullOrBlank()) {
+                        names[uid]?.let { nm ->
+                            items[idx] = r.copy(name = nm)
+                        }
+                    }
+                }
+                onDone()
+            }
+        }
+
+        allUids.forEach { uid ->
+            // Try lowercase "users" first (your DB), then fallback to "Users"
+            db.getReference("users/$uid").get()
+                .addOnSuccessListener { snap ->
+                    val nm = takeName(snap) ?: run {
+                        // fallback to "Users"
+                        null
+                    }
+                    if (nm != null) {
+                        names[uid] = nm
+                        doneOne()
+                    } else {
+                        db.getReference(DbPaths.user(uid)).get()
+                            .addOnSuccessListener { s2 ->
+                                takeName(s2)?.let { names[uid] = it }
+                                doneOne()
+                            }
+                            .addOnFailureListener { doneOne() }
+                    }
+                }
+                .addOnFailureListener {
+                    db.getReference(DbPaths.user(uid)).get()
+                        .addOnSuccessListener { s2 ->
+                            takeName(s2)?.let { names[uid] = it }
+                            doneOne()
+                        }
+                        .addOnFailureListener { doneOne() }
+                }
+        }
     }
 
     companion object {

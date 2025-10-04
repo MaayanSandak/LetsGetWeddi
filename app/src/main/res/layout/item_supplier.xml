@@ -65,7 +65,6 @@
         app:layout_constraintStart_toStartOf="@id/textName"
         app:layout_constraintTop_toBottomOf="@id/textLocation" />
 
-
     <LinearLayout
         android:id="@+id/ratingRow"
         android:layout_width="wrap_content"
@@ -77,10 +76,13 @@
 
         <RatingBar
             android:id="@+id/ratingBar"
+            style="?android:attr/ratingBarStyleSmall"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:isIndicator="true"
             android:numStars="5"
+            android:scaleX="0.92"
+            android:scaleY="0.92"
             android:stepSize="0.5" />
 
         <TextView
@@ -92,7 +94,7 @@
             android:textColor="@color/md_theme_onSurface"
             android:textSize="12sp" />
     </LinearLayout>
-    
+
     <LinearLayout
         android:id="@+id/actionsRow"
         android:layout_width="0dp"

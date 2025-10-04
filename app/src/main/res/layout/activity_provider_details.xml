@@ -107,7 +107,7 @@
                 android:layout_marginTop="8dp"
                 android:text="@string/availability_hint_no_dates"
                 android:visibility="gone" />
-
+            
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonManageGallery"
                 style="@style/Weddi.Button"
@@ -171,11 +171,14 @@
 
                 <RatingBar
                     android:id="@+id/ratingBarSummary"
+                    style="?android:attr/ratingBarStyleSmall"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:isIndicator="true"
                     android:numStars="5"
+                    android:scaleX="0.92"
+                    android:scaleY="0.92"
                     android:stepSize="0.5" />
 
                 <TextView

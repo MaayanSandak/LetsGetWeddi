@@ -1,6 +1,7 @@
 package com.example.letsgetweddi.adapters
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.RatingBar
 import android.widget.TextView
@@ -23,16 +24,21 @@ class ReviewAdapter(
 
     override fun onBindViewHolder(holder: VH, position: Int) {
         val review = items[position]
-        val context = holder.itemView.context
+        val ctx = holder.itemView.context
 
-        holder.author.text = if (review.name.isNullOrBlank()) {
-            context.getString(R.string.anonymous)
+        val authorName = review.name?.takeIf { it.isNotBlank() }
+            ?: ctx.getString(R.string.anonymous)
+        holder.author.text = authorName
+
+        val text = review.comment?.trim().orEmpty()
+        if (text.isEmpty()) {
+            holder.content.visibility = View.GONE
         } else {
-            review.name
+            holder.content.visibility = View.VISIBLE
+            holder.content.text = text
         }
 
-        holder.content.text = review.comment ?: ""
-        holder.ratingBar.rating = review.rating
+        holder.ratingBar.rating = review.rating.coerceIn(0f, 5f)
         holder.date.text = formatDate(review.timestamp)
     }
 
@@ -56,5 +62,4 @@ class ReviewAdapter(
         val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
         return sdf.format(Date(timestamp))
     }
-
 }
