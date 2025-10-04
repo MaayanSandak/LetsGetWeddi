@@ -30,28 +30,140 @@ class FavoritesFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        adapter = SupplierAdapter(favorites)
+
+        adapter = SupplierAdapter(favorites, isFavorites = true)
         binding.recyclerFavorites.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerFavorites.adapter = adapter
 
         val user = FirebaseAuth.getInstance().currentUser ?: return
+
         FirebaseRefs.favorites(user.uid).addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                favorites.clear()
+                val result = LinkedHashMap<String, Supplier>()
+                val idsToFetch = mutableListOf<String>()
+
                 for (child in snapshot.children) {
-                    val supplier = child.getValue(Supplier::class.java)?.copy(
-                        id = child.child("id").getValue(String::class.java) ?: child.key
-                    )
-                    if (supplier != null) favorites.add(supplier)
+                    val id = child.key ?: continue
+                    val raw = child.value
+                    when (raw) {
+                        is Boolean -> {
+                            if (raw) idsToFetch.add(id)
+                        }
+
+                        is Map<*, *> -> {
+                            snapToSupplierSafely(child, fallbackId = id)?.let { s ->
+                                result[id] = s
+                            }
+                        }
+
+                        else -> {
+                        }
+                    }
                 }
-                favorites.sortBy { it.name ?: "" }
-                adapter.notifyDataSetChanged()
-                binding.textEmpty.visibility = if (favorites.isEmpty()) View.VISIBLE else View.GONE
+
+                if (idsToFetch.isEmpty()) {
+                    applyFavorites(result.values.toList())
+                    return
+                }
+
+                var remaining = idsToFetch.size
+                for (sid in idsToFetch) {
+                    FirebaseRefs.suppliers().child(sid)
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(snap: DataSnapshot) {
+                                snapToSupplierSafely(snap, fallbackId = sid)?.let { s ->
+                                    result[sid] = s
+                                }
+                                if (--remaining == 0) applyFavorites(result.values.toList())
+                            }
+
+                            override fun onCancelled(error: DatabaseError) {
+                                if (--remaining == 0) applyFavorites(result.values.toList())
+                            }
+                        })
+                }
             }
 
             override fun onCancelled(error: DatabaseError) {
+                favorites.clear()
+                adapter.notifyDataSetChanged()
                 binding.textEmpty.visibility = View.VISIBLE
             }
         })
+    }
+
+    private fun applyFavorites(list: List<Supplier>) {
+        val sorted = list.sortedBy { it.name ?: "" }
+        favorites.clear()
+        favorites.addAll(sorted)
+        adapter.notifyDataSetChanged()
+        binding.textEmpty.visibility = if (favorites.isEmpty()) View.VISIBLE else View.GONE
+    }
+
+    private fun snapToSupplierSafely(snap: DataSnapshot, fallbackId: String? = null): Supplier? {
+        val id = snap.key ?: fallbackId ?: return null
+
+        fun value(path: String): Any? = snap.child(path).value
+
+        fun stringOrNull(path: String): String? {
+            val v = value(path)
+            return when (v) {
+                null -> null
+                is String -> v
+                is Number, is Boolean -> v.toString()
+                is Map<*, *> -> null
+                else -> null
+            }
+        }
+
+        fun floatOrNull(path: String): Float? {
+            val v = value(path)
+            return when (v) {
+                is Number -> v.toFloat()
+                is String -> v.toFloatOrNull()
+                else -> null
+            }
+        }
+
+        fun intOrNull(path: String): Int? {
+            val v = value(path)
+            return when (v) {
+                is Number -> v.toInt()
+                is String -> v.toIntOrNull()
+                else -> null
+            }
+        }
+
+        val name = stringOrNull("name")
+        val description = stringOrNull("description")
+        val imageUrl = stringOrNull("imageUrl") ?: stringOrNull("coverImage")
+        val categoryId = stringOrNull("categoryId") ?: stringOrNull("category")
+        val rating = floatOrNull("rating") ?: floatOrNull("averageRating")
+        val reviewCount = intOrNull("reviewCount") ?: intOrNull("reviewsCount")
+
+        val phone = stringOrNull("phone")
+
+        val location: String? = when (val locVal = value("location")) {
+            is String -> locVal
+            is Map<*, *> -> {
+                val city = (locVal["city"] as? String)?.takeIf { it.isNotBlank() }
+                val region = (locVal["region"] as? String)?.takeIf { it.isNotBlank() }
+                listOfNotNull(city, region).joinToString(", ").ifBlank { null }
+            }
+
+            else -> null
+        }
+
+        return Supplier(
+            id = id,
+            name = name,
+            description = description,
+            imageUrl = imageUrl,
+            categoryId = categoryId,
+            rating = rating,
+            reviewCount = reviewCount,
+            phone = phone,
+            location = location
+        )
     }
 }

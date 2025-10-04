@@ -1,12 +1,12 @@
 package com.example.letsgetweddi.data
 
 object DbPaths {
-    const val USERS = "Users"
-    const val SUPPLIERS = "Suppliers"
-    const val FAVORITES = "Favorites"
+    const val USERS = "users"
+    const val SUPPLIERS = "suppliers"
+    const val FAVORITES = "favorites"
     const val REVIEWS = "reviews"
-    const val SUPPLIERS_AVAILABILITY = "SuppliersAvailability"
-    const val CHATS = "Chats"
+    const val SUPPLIERS_AVAILABILITY = "suppliersAvailability"
+    const val CHATS = "chats"
 
     fun supplier(id: String) = "$SUPPLIERS/$id"
     fun user(uid: String) = "$USERS/$uid"

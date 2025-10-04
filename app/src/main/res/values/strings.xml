@@ -142,6 +142,13 @@
     <string name="availability_hint_error">Availability info unavailable</string>
     <string name="rating_avg">%1$.1f</string>
     <string name="reviews_count">(%1$d)</string>
+    <string name="sun">Sun</string>
+    <string name="mon">Mon</string>
+    <string name="tue">Tue</string>
+    <string name="wed">Wed</string>
+    <string name="thu">Thu</string>
+    <string name="fri">Fri</string>
+    <string name="sat">Sat</string>
 
 
 </resources>
