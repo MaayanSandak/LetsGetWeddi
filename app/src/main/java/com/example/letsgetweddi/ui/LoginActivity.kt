@@ -5,13 +5,17 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.letsgetweddi.MainActivity
 import com.example.letsgetweddi.databinding.ActivityLoginBinding
 import com.google.firebase.auth.FirebaseAuth
-import com.example.letsgetweddi.MainActivity
+import com.google.firebase.database.FirebaseDatabase
+import java.util.Locale
+
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
     private lateinit var binding: ActivityLoginBinding
+    private val db by lazy { FirebaseDatabase.getInstance() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +38,7 @@ class LoginActivity : AppCompatActivity() {
             setLoading(true)
             auth.signInWithEmailAndPassword(email, password)
                 .addOnSuccessListener {
+                    ensureUserRow()
                     setLoading(false)
                     startActivity(
                         Intent(this, MainActivity::class.java)
@@ -47,6 +52,35 @@ class LoginActivity : AppCompatActivity() {
                 }
         }
     }
+
+    private fun ensureUserRow() {
+        val user = auth.currentUser ?: return
+        val uid = user.uid
+        val ref = db.reference.child("users").child(uid)
+        ref.get().addOnSuccessListener { snap ->
+            if (!snap.exists()) {
+                val email = user.email.orEmpty()
+                val display = (user.displayName?.takeIf { it.isNotBlank() }
+                    ?: email.substringBefore('@', email)
+                        ).ifBlank { "User" }
+                val map = mapOf(
+                    "uid" to uid,
+                    "fullName" to titleCase(display),
+                    "email" to email,
+                    "role" to "client"
+                )
+                ref.setValue(map)
+            }
+        }
+    }
+
+    private fun titleCase(s: String): String =
+        s.split(" ", "_", ".", "-")
+            .filter { it.isNotBlank() }
+            .joinToString(" ") { part ->
+                part.lowercase(Locale.getDefault())
+                    .replaceFirstChar { c -> c.titlecase(Locale.getDefault()) }
+            }
 
     private fun setLoading(loading: Boolean) {
         val enable = !loading
