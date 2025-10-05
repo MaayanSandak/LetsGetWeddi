@@ -73,7 +73,6 @@ class TipsAndChecklistFragment : Fragment() {
         binding.recyclerChecklist.adapter = checklistAdapter
         binding.recyclerTips.adapter = tipAdapter
 
-        // Seed defaults once if empty
         val checklistRef = database.child("checklist").child(uid)
         checklistRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -81,7 +80,6 @@ class TipsAndChecklistFragment : Fragment() {
                     val updates = HashMap<String, Any?>()
                     defaultChecklist.forEach { taskText ->
                         val id = checklistRef.push().key ?: return@forEach
-                        // Ensure field name is "isDone" in DB
                         updates[id] = mapOf(
                             "id" to id,
                             "task" to taskText,
@@ -95,13 +93,11 @@ class TipsAndChecklistFragment : Fragment() {
             override fun onCancelled(error: DatabaseError) {}
         })
 
-        // Live list
         checklistRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 allChecklistItems.clear()
                 for (c in snapshot.children) {
                     val item = ChecklistItem.fromSnapshot(c)
-                    // If someone wrote "done" instead of "isDone", fromSnapshot already handles it
                     if (item.id != null) allChecklistItems.add(item)
                 }
                 filterChecklist(binding.searchViewChecklist.query?.toString().orEmpty())
@@ -110,20 +106,27 @@ class TipsAndChecklistFragment : Fragment() {
             override fun onCancelled(error: DatabaseError) {}
         })
 
-        // Tips per user (live)
-        val tipsRef = database.child("tips").child(uid)
-        tipsRef.addValueEventListener(object : ValueEventListener {
+        val userTipsRef = database.child("tips").child(uid)
+        val globalTipsRef = database.child("tips").child("global")
+
+        val userListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                allTips.clear()
-                for (c in snapshot.children) {
-                    val tip = c.getValue(Tip::class.java)
-                    if (tip != null) allTips.add(tip)
-                }
-                filterTips(binding.searchViewTips.query?.toString().orEmpty())
+                mergeAndDisplayTips(userSnap = snapshot, globalSnap = lastGlobalSnap)
             }
 
             override fun onCancelled(error: DatabaseError) {}
-        })
+        }
+        val globalListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                lastGlobalSnap = snapshot
+                mergeAndDisplayTips(userSnap = lastUserSnap, globalSnap = snapshot)
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        }
+
+        userTipsRef.addValueEventListener(userListener)
+        globalTipsRef.addValueEventListener(globalListener)
 
         binding.buttonAddTask.setOnClickListener {
             val input = EditText(requireContext()).apply { hint = "Enter your task" }
@@ -186,6 +189,55 @@ class TipsAndChecklistFragment : Fragment() {
         })
     }
 
+    private var lastUserSnap: DataSnapshot? = null
+    private var lastGlobalSnap: DataSnapshot? = null
+
+    private fun mergeAndDisplayTips(userSnap: DataSnapshot?, globalSnap: DataSnapshot?) {
+        lastUserSnap = userSnap ?: lastUserSnap
+        lastGlobalSnap = globalSnap ?: lastGlobalSnap
+
+        if (lastUserSnap == null && lastGlobalSnap == null) return
+
+        fun parseTips(snap: DataSnapshot?): List<Tip> {
+            if (snap == null) return emptyList()
+            val out = mutableListOf<Tip>()
+            for (c in snap.children) {
+                val v = c.value
+                when (v) {
+                    is String -> {
+                        val content = v.trim()
+                        if (content.isNotEmpty()) {
+                            val title = content.lineSequence().firstOrNull()?.take(40) ?: "Tip"
+                            out.add(Tip(title = title, content = content))
+                        }
+                    }
+
+                    is Map<*, *> -> {
+                        val title = (v["title"] as? String)?.takeIf { it.isNotBlank() }
+                            ?: (v["name"] as? String)?.takeIf { it.isNotBlank() }
+                            ?: (v["header"] as? String)?.takeIf { it.isNotBlank() }
+                        val content = (v["content"] as? String)?.takeIf { it.isNotBlank() }
+                            ?: (v["text"] as? String)?.takeIf { it.isNotBlank() }
+                            ?: (v["body"] as? String)?.takeIf { it.isNotBlank() }
+                            ?: (v["message"] as? String)?.takeIf { it.isNotBlank() }
+                        if (!title.isNullOrBlank() || !content.isNullOrBlank()) {
+                            out.add(Tip(title = title ?: "Tip", content = content ?: ""))
+                        }
+                    }
+                }
+            }
+            return out
+        }
+
+        val userList = parseTips(lastUserSnap)
+        val globalList = parseTips(lastGlobalSnap)
+
+        allTips.clear()
+        allTips.addAll(userList + globalList)
+
+        filterTips(binding.searchViewTips.query?.toString().orEmpty())
+    }
+
     private fun filterChecklist(query: String) {
         val q = query.lowercase()
         filteredChecklistItems.clear()
@@ -199,8 +251,8 @@ class TipsAndChecklistFragment : Fragment() {
         val q = query.lowercase()
         filteredTips.clear()
         filteredTips.addAll(allTips.filter {
-            it.title?.lowercase()?.contains(q) == true || it.content?.lowercase()
-                ?.contains(q) == true
+            it.title?.lowercase()?.contains(q) == true ||
+                    it.content?.lowercase()?.contains(q) == true
         })
         tipAdapter.notifyDataSetChanged()
     }
