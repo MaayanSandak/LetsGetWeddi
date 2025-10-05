@@ -131,6 +131,7 @@
     <string name="menu_supplier_gallery">Manage Gallery</string>
     <string name="menu_supplier_availability">Manage Availability</string>
     <string name="menu_logout">Log out</string>
+    <string name="no_conversations">No messages yet</string>
 
     <string name="no_suppliers_found">No suppliers found</string>
     <string name="list_of_suppliers">List of suppliers</string>

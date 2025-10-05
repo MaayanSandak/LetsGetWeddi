@@ -101,13 +101,12 @@ class AllSuppliersFragment : Fragment() {
                     if (s.id != null) {
                         pending.add(s)
 
-                        // IMPORTANT: lowercase "reviews" to match your RTDB
                         db.getReference("reviews").child(s.id!!)
                             .get()
                             .addOnSuccessListener { snap ->
-                                // robust parsing
                                 val reviews = snap.children.mapNotNull {
-                                    Review.fromSnapshot(it) ?: it.getValue(Review::class.java)
+                                    com.example.letsgetweddi.model.Review.fromSnapshot(it)
+                                        ?: it.getValue(Review::class.java)
                                 }
                                 s.rating = reviews.map { it.rating }.average().toFloat()
                                 s.reviewCount = reviews.size
@@ -127,15 +126,24 @@ class AllSuppliersFragment : Fragment() {
     }
 
     private fun applyFilter() {
-        val q = binding.searchView.query?.toString()?.trim()?.lowercase().orEmpty()
+        val qRaw = binding.searchView.query?.toString()?.trim().orEmpty()
+        val q = normalize(qRaw)
         val selectedLocation = (binding.spinnerLocation.selectedItem as? String) ?: "All locations"
+        val selectedNorm = normalize(selectedLocation)
 
         shown.clear()
         shown.addAll(
             all.asSequence()
-                .filter { s -> q.isEmpty() || (s.name ?: "").lowercase().contains(q) }
                 .filter { s ->
-                    selectedLocation == "All locations" || (s.location ?: "") == selectedLocation
+                    if (q.isEmpty()) true else {
+                        val nameMatch = normalize(s.name).contains(q)
+                        val locMatch = normalize(s.location).contains(q)
+                        nameMatch || locMatch
+                    }
+                }
+                .filter { s ->
+                    selectedNorm == normalize("All locations") ||
+                            normalize(s.location).contains(selectedNorm)
                 }
                 .sortedBy { it.name ?: "" }
                 .toList()
@@ -170,5 +178,15 @@ class AllSuppliersFragment : Fragment() {
                 block()
             }
         }
+    }
+
+    private fun normalize(text: String?): String {
+        if (text.isNullOrBlank()) return ""
+        var t = text.lowercase().trim()
+        t = t.replace(Regex("[`'\"’]"), "")
+            .replace(Regex("[_/|,-]+"), " ")
+            .replace(Regex("\\s+"), " ")
+            .trim()
+        return t
     }
 }

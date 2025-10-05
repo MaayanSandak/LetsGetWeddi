@@ -2,6 +2,7 @@ package com.example.letsgetweddi.ui.chat
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.letsgetweddi.data.Conversation
@@ -32,6 +33,9 @@ class ConversationsActivity : AppCompatActivity() {
         b.recycler.layoutManager = LinearLayoutManager(this)
         b.recycler.adapter = adapter
 
+        b.textEmpty.visibility = View.VISIBLE
+        b.recycler.visibility = View.GONE
+
         val uid = auth.currentUser?.uid ?: return
         db.child("inbox").child(uid)
             .orderByChild("lastTs")
@@ -50,9 +54,16 @@ class ConversationsActivity : AppCompatActivity() {
                     }
                     list.sortByDescending { it.lastTs }
                     adapter.submitList(list)
+                    val empty = list.isEmpty()
+                    b.textEmpty.visibility = if (empty) View.VISIBLE else View.GONE
+                    b.recycler.visibility = if (empty) View.GONE else View.VISIBLE
                 }
 
-                override fun onCancelled(error: DatabaseError) {}
+                override fun onCancelled(error: DatabaseError) {
+                    adapter.submitList(emptyList())
+                    b.textEmpty.visibility = View.VISIBLE
+                    b.recycler.visibility = View.GONE
+                }
             })
     }
 
