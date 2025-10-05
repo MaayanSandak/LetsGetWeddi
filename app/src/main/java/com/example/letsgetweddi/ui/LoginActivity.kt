@@ -61,8 +61,7 @@ class LoginActivity : AppCompatActivity() {
             if (!snap.exists()) {
                 val email = user.email.orEmpty()
                 val display = (user.displayName?.takeIf { it.isNotBlank() }
-                    ?: email.substringBefore('@', email)
-                        ).ifBlank { "User" }
+                    ?: email.substringBefore('@', email)).ifBlank { "User" }
                 val map = mapOf(
                     "uid" to uid,
                     "fullName" to titleCase(display),
@@ -87,8 +86,6 @@ class LoginActivity : AppCompatActivity() {
         binding.progress.visibility = if (loading) View.VISIBLE else View.GONE
         binding.buttonLogin.isEnabled = enable
         binding.buttonRegister.isEnabled = enable
-        binding.btnClient.isEnabled = enable
-        binding.btnSupplier.isEnabled = enable
         binding.editTextEmail.isEnabled = enable
         binding.editTextPassword.isEnabled = enable
     }

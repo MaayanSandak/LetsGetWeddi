@@ -255,15 +255,15 @@ class HomeFragment : Fragment() {
                 override fun onDataChange(s: DataSnapshot) {
                     val millis = s.getValue(Long::class.java) ?: 0L
                     if (millis <= 0L) {
-                        b.textCountdownHeader.text = "Countdown to the big day!"
-                        b.textCountdown.text = "Set your wedding date"
+                        b.textCountdownHeader.text = getString(R.string.countdown_to_the_big_day)
+                        b.textCountdown.text = getString(R.string.set_your_wedding_date)
                         return
                     }
                     val now = System.currentTimeMillis()
                     val diff = millis - now
                     val days = ceil(diff.toDouble() / TimeUnit.DAYS.toMillis(1).toDouble()).toLong()
                     if (days >= 0) {
-                        b.textCountdownHeader.text = "Countdown to the big day!"
+                        b.textCountdownHeader.text = getString(R.string.countdown_to_the_big_day)
                         b.textCountdown.text = "$days days to go"
                     } else {
                         b.textCountdownHeader.text = "It was great!"
@@ -272,8 +272,8 @@ class HomeFragment : Fragment() {
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    b.textCountdownHeader.text = "Countdown to the big day!"
-                    b.textCountdown.text = "Set your wedding date"
+                    b.textCountdownHeader.text = getString(R.string.countdown_to_the_big_day)
+                    b.textCountdown.text = getString(R.string.set_your_wedding_date)
                 }
             })
     }
@@ -298,7 +298,7 @@ class HomeFragment : Fragment() {
                     }
                 }
                 if (tips.isEmpty()) {
-                    b.textTipBody.text = "Tips unavailable right now."
+                    b.textTipBody.text = getString(R.string.tips_unavailable_right_now)
                     return
                 }
                 val day = LocalDate.now().dayOfYear
@@ -308,7 +308,7 @@ class HomeFragment : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                b.textTipBody.text = "Tips unavailable right now."
+                b.textTipBody.text = getString(R.string.tips_unavailable_right_now)
             }
         })
     }

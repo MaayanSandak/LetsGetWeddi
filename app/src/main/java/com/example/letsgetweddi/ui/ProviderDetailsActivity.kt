@@ -4,7 +4,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
-import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.letsgetweddi.R
@@ -15,8 +14,6 @@ import com.example.letsgetweddi.databinding.ActivityProviderDetailsBinding
 import com.example.letsgetweddi.model.Review
 import com.example.letsgetweddi.model.Supplier
 import com.example.letsgetweddi.ui.gallery.GalleryFragment
-import com.example.letsgetweddi.ui.supplier.AvailabilityActivity
-import com.example.letsgetweddi.utils.RoleManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -46,11 +43,13 @@ class ProviderDetailsActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         supplierId = intent.getStringExtra(EXTRA_SUPPLIER_ID)
-        categoryId = supplier?.categoryId
+        categoryId = null
 
         setupToolbar()
         setupLists()
         wireActions()
+
+        binding.manageRow.visibility = View.GONE
 
         loadSupplier()
         observeFavorite()
@@ -87,31 +86,6 @@ class ProviderDetailsActivity : AppCompatActivity() {
         }
 
         binding.buttonFav.setOnClickListener { toggleFavorite() }
-
-        binding.buttonEdit.setOnClickListener {
-            val id = supplierId ?: return@setOnClickListener
-            startActivity(
-                Intent(this, com.example.letsgetweddi.ui.supplier.SupplierEditActivity::class.java)
-                    .putExtra(EXTRA_SUPPLIER_ID, id)
-            )
-        }
-
-        binding.buttonManageGallery.setOnClickListener {
-            val id = supplierId ?: return@setOnClickListener
-            startActivity(
-                Intent(this, com.example.letsgetweddi.ui.gallery.GalleryViewActivity::class.java)
-                    .putExtra(EXTRA_SUPPLIER_ID, supplier?.id)
-                    .putExtra("categoryId", supplier?.categoryId)
-            )
-        }
-
-        binding.buttonManageAvailability.setOnClickListener {
-            val id = supplierId ?: return@setOnClickListener
-            startActivity(
-                Intent(this, AvailabilityActivity::class.java)
-                    .putExtra(EXTRA_SUPPLIER_ID, id)
-            )
-        }
     }
 
     private fun loadSupplier() {
@@ -151,11 +125,6 @@ class ProviderDetailsActivity : AppCompatActivity() {
 
         loadSupplierCover(binding.imageHeader, s.id, s.imageUrl)
 
-        RoleManager.isSupplier(this) { isSupplier, mySupplierId ->
-            val canEdit = isSupplier && !mySupplierId.isNullOrBlank() && mySupplierId == s.id
-            binding.manageRow.visibility = if (canEdit) View.VISIBLE else View.GONE
-        }
-
         binding.buttonFav.visibility = View.VISIBLE
         binding.buttonChat.visibility = View.VISIBLE
         binding.buttonWhatsApp.visibility = View.VISIBLE
@@ -182,7 +151,7 @@ class ProviderDetailsActivity : AppCompatActivity() {
     }
 
     private fun updateFavIcon(isFav: Boolean) {
-        val btn = binding.buttonFav as ImageButton
+        val btn = binding.buttonFav
         btn.setImageResource(if (isFav) R.drawable.ic_favorite else R.drawable.ic_favorite_border)
         btn.contentDescription =
             getString(if (isFav) R.string.remove_from_favorites else R.string.add_to_favorites)
@@ -416,7 +385,7 @@ class ProviderDetailsActivity : AppCompatActivity() {
         allUids.forEach { uid ->
             db.getReference("users/$uid").get()
                 .addOnSuccessListener { snap ->
-                    val nm = takeName(snap) ?: run { null }
+                    val nm = takeName(snap)
                     if (nm != null) {
                         names[uid] = nm
                         doneOne()

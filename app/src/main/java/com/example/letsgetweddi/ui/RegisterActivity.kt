@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.EditText
-import android.widget.RadioGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.letsgetweddi.R
@@ -33,24 +32,17 @@ class RegisterActivity : AppCompatActivity() {
         val nameEditText = findViewById<EditText>(R.id.editTextName)
         val emailEditText = findViewById<EditText>(R.id.editTextEmail)
         val passwordEditText = findViewById<EditText>(R.id.editTextPassword)
-        val roleGroup = findViewById<RadioGroup>(R.id.roleGroup)
         val createAccountButton = findViewById<View>(R.id.buttonCreateAccount)
 
         createAccountButton.setOnClickListener {
             val name = nameEditText.text?.toString()?.trim().orEmpty()
             val email = emailEditText.text?.toString()?.trim().orEmpty()
             val password = passwordEditText.text?.toString()?.trim().orEmpty()
-            val selectedRoleId = roleGroup.checkedRadioButtonId
 
-            if (name.isEmpty() || email.isEmpty() || password.isEmpty() || selectedRoleId == -1) {
+            if (name.isEmpty() || email.isEmpty() || password.isEmpty()) {
                 Toast.makeText(this, "Please fill in all fields.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-
-            val role = if (selectedRoleId != -1)
-                findViewById<View>(selectedRoleId).resources.getResourceEntryName(selectedRoleId)
-            else
-                ""
 
             auth.createUserWithEmailAndPassword(email, password)
                 .addOnSuccessListener { res ->
@@ -59,7 +51,7 @@ class RegisterActivity : AppCompatActivity() {
                         "uid" to uid,
                         "fullName" to name,
                         "email" to email,
-                        "clientType" to role
+                        "role" to "client"
                     )
                     db.reference.child("users").child(uid).setValue(userMap)
                         .addOnSuccessListener {

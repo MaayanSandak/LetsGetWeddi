@@ -5,8 +5,6 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.ImageView
-import android.widget.TextView
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import com.example.letsgetweddi.databinding.ActivityMainBinding
@@ -20,8 +18,6 @@ import com.google.firebase.database.FirebaseDatabase
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     private lateinit var binding: ActivityMainBinding
-    private var role: String = "client"
-    private var supplierId: String? = null
     private var suppliersExpanded = false
 
     private val auth by lazy { FirebaseAuth.getInstance() }
@@ -53,42 +49,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             return
         }
 
-        applyRoleUI("client")
-        verifyRoleAndRebuild(uid)
+        applyRoleUI()
         openHome()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putBoolean(STATE_SUPPLIERS_EXPANDED, suppliersExpanded)
         super.onSaveInstanceState(outState)
-    }
-
-    private fun verifyRoleAndRebuild(uid: String) {
-        db.getReference("Users").child(uid).get().addOnSuccessListener { snap ->
-            val dbRole = snap.child("role").getValue(String::class.java).orEmpty()
-            val dbSupplierId = snap.child("supplierId").getValue(String::class.java)
-
-            if (dbRole == "supplier" && !dbSupplierId.isNullOrBlank()) {
-                db.getReference("Suppliers").child(dbSupplierId).get().addOnSuccessListener { s2 ->
-                    if (s2.exists()) {
-                        role = "supplier"
-                        supplierId = dbSupplierId
-                    } else {
-                        role = "client"
-                        supplierId = null
-                    }
-                    applyRoleUI(role)
-                    applySuppliersExpandedUI()
-                    renderHeaderArrow()
-                }
-            } else {
-                role = "client"
-                supplierId = null
-                applyRoleUI(role)
-                applySuppliersExpandedUI()
-                renderHeaderArrow()
-            }
-        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean = super.onCreateOptionsMenu(menu)
@@ -155,24 +122,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 startIfExists("com.example.letsgetweddi.ui.chat.ConversationsActivity")
             }
 
-            R.id.menu_supplier_gallery -> {
-                val intent = Intent(
-                    this,
-                    com.example.letsgetweddi.ui.gallery.GalleryManageActivity::class.java
-                )
-                intent.putExtra("supplierId", supplierId)
-                startActivity(intent); true
-            }
-
-            R.id.menu_supplier_availability -> {
-                val intent = Intent(
-                    this,
-                    com.example.letsgetweddi.ui.supplier.SupplierCalendarActivity::class.java
-                )
-                intent.putExtra("supplierId", supplierId)
-                startActivity(intent); true
-            }
-
             R.id.menu_logout -> {
                 auth.signOut()
                 startActivity(Intent(this, LoginActivity::class.java))
@@ -189,9 +138,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun wireSuppliersHeaderAction() {
         val item = binding.navView.menu.findItem(R.id.menu_suppliers_header)
         val row = item.actionView
-        val titleView = row?.findViewById<TextView>(R.id.headerTitle)
-        val arrowView = row?.findViewById<ImageView>(R.id.headerArrow)
-
         row?.setOnClickListener {
             suppliersExpanded = !suppliersExpanded
             applySuppliersExpandedUI()
@@ -202,17 +148,15 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun renderHeaderArrow() {
         val row = binding.navView.menu.findItem(R.id.menu_suppliers_header).actionView
-        val arrowView = row?.findViewById<ImageView>(R.id.headerArrow)
+        val arrowView = row?.findViewById<android.widget.ImageView>(R.id.headerArrow)
         arrowView?.rotation = if (suppliersExpanded) 180f else 0f
     }
 
-    private fun applyRoleUI(r: String) {
+    private fun applyRoleUI() {
         val m = binding.navView.menu
-        val isSupplier = r == "supplier"
-        m.findItem(R.id.menu_favorites)?.isVisible = !isSupplier
-        m.findItem(R.id.menu_tips)?.isVisible = !isSupplier
-        m.findItem(R.id.menu_supplier_gallery)?.isVisible = isSupplier
-        m.findItem(R.id.menu_supplier_availability)?.isVisible = isSupplier
+        m.findItem(R.id.menu_favorites)?.isVisible = true
+        m.findItem(R.id.menu_tips)?.isVisible = true
+        // supplier-only items were removed from the menu; no references here
     }
 
     private fun applySuppliersExpandedUI() {

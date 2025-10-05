@@ -80,7 +80,7 @@ class SuppliersListFragment : Fragment() {
             Log.d(TAG, "loadAll -> shown=${shown.size}")
         }
     }
-    
+
     private fun attachReviewsToSupplier(s: Supplier, after: (() -> Unit)? = null) {
         val id = s.id ?: return after?.invoke() ?: Unit
         FirebaseDatabase.getInstance().getReference("reviews").child(id)
@@ -261,12 +261,6 @@ class SuppliersListFragment : Fragment() {
                     putString("categoryId", category.id ?: "")
                     putString("title", category.title ?: "")
                 }
-            }
-        }
-
-        fun newInstance(categoryId: String): SuppliersListFragment {
-            return SuppliersListFragment().apply {
-                arguments = Bundle().apply { putString("category", categoryId) }
             }
         }
     }

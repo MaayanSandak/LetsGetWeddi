@@ -150,6 +150,9 @@
     <string name="thu">Thu</string>
     <string name="fri">Fri</string>
     <string name="sat">Sat</string>
+    <string name="countdown_to_the_big_day">Countdown to the big day!</string>
+    <string name="set_your_wedding_date">Set your wedding date</string>
+    <string name="tips_unavailable_right_now">Tips unavailable right now.</string>
 
 
 </resources>

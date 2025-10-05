@@ -29,7 +29,6 @@ class ProfileFragment : Fragment() {
     private val FIXED_AVATAR_URL =
         "https://firebasestorage.googleapis.com/v0/b/letsgetweddi.firebasestorage.app/o/users%2FUID_USER_1%2Favatar.jpg?alt=media&token=d3449a06-d267-42ef-9a39-5a4725922c1f"
 
-    // NEW: hold picked date in millis
     private var selectedWeddingDateMillis: Long? = null
 
     override fun onCreateView(
@@ -104,7 +103,6 @@ class ProfileFragment : Fragment() {
             val picked = findNameInSnapshot(s)
                 ?: auth.currentUser?.displayName
                 ?: deriveNameFromEmail(auth.currentUser?.email)
-                ?: ""
             val name = picked.trim()
             val email = s.child("email").getValue(String::class.java)
                 ?: auth.currentUser?.email.orEmpty()
@@ -112,7 +110,6 @@ class ProfileFragment : Fragment() {
             binding.textViewName.text = if (name.isNotEmpty()) "Name: $name" else "Name: -"
             binding.textViewEmail.text = if (email.isNotEmpty()) "Email: $email" else "Email: -"
 
-            // NEW: load weddingDate if exists
             val wMillis = s.child("weddingDate").getValue(Long::class.java)
             if (wMillis != null && wMillis > 0L) {
                 selectedWeddingDateMillis = wMillis
@@ -164,7 +161,6 @@ class ProfileFragment : Fragment() {
                 }
             })
 
-        // NEW: date pick & save
         binding.buttonPickWeddingDate.setOnClickListener { openDatePicker() }
 
         binding.buttonSaveWeddingDate.setOnClickListener {

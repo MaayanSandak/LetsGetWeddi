@@ -51,14 +51,6 @@
         android:id="@+id/menu_chat"
         android:title="@string/menu_messages" />
     <item
-        android:id="@+id/menu_supplier_gallery"
-        android:title="@string/supplier_gallery_manage"
-        android:visible="false" />
-    <item
-        android:id="@+id/menu_supplier_availability"
-        android:title="@string/supplier_availability"
-        android:visible="false" />
-    <item
         android:id="@+id/menu_logout"
         android:title="@string/logout" />
 </menu>

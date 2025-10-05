@@ -8,7 +8,12 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.letsgetweddi.data.ChatMessage
 import com.example.letsgetweddi.databinding.ActivityChatBinding
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ServerValue
+import com.google.firebase.database.ValueEventListener
 
 class ChatActivity : AppCompatActivity() {
 
@@ -119,7 +124,7 @@ class ChatActivity : AppCompatActivity() {
             seen = false
         )
 
-        val updates = hashMapOf<String, Any>(
+        val updates = hashMapOf(
             "chats/$chatId/messages/$msgKey" to msg,
             "inbox/$myId/$chatId" to mapOf(
                 "chatId" to chatId,

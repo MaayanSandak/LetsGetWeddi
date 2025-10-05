@@ -161,10 +161,4 @@ class SupplierAdapter(
             }
         }
     }
-
-    fun submitList(newItems: List<Supplier>) {
-        items.clear()
-        items.addAll(newItems)
-        notifyDataSetChanged()
-    }
 }

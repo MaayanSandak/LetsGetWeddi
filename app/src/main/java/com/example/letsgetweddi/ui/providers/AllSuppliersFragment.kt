@@ -101,11 +101,11 @@ class AllSuppliersFragment : Fragment() {
                     if (s.id != null) {
                         pending.add(s)
 
-                        db.getReference("reviews").child(s.id!!)
+                        db.getReference("reviews").child(s.id)
                             .get()
                             .addOnSuccessListener { snap ->
                                 val reviews = snap.children.mapNotNull {
-                                    com.example.letsgetweddi.model.Review.fromSnapshot(it)
+                                    Review.fromSnapshot(it)
                                         ?: it.getValue(Review::class.java)
                                 }
                                 s.rating = reviews.map { it.rating }.average().toFloat()
@@ -167,7 +167,7 @@ class AllSuppliersFragment : Fragment() {
         this.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
                 parent: android.widget.AdapterView<*>,
-                view: android.view.View?,
+                view: View?,
                 position: Int,
                 id: Long
             ) {

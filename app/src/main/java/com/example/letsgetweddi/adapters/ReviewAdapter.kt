@@ -44,12 +44,6 @@ class ReviewAdapter(
 
     override fun getItemCount(): Int = items.size
 
-    fun submitList(newItems: List<Review>) {
-        items.clear()
-        items.addAll(newItems)
-        notifyDataSetChanged()
-    }
-
     inner class VH(root: ViewGroup) : RecyclerView.ViewHolder(root) {
         val author: TextView = root.findViewById(R.id.textAuthor)
         val content: TextView = root.findViewById(R.id.textContent)
